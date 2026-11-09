@@ -269,5 +269,13 @@
         "url": "https://t.me/"
       }
     }
+  },
+  "fixed_buttons": {
+    "close": {
+      "text": "ᴄʟᴏsᴇ",
+      "callback_data": "branding:close",
+      "locked": true,
+      "editable": false
+    }
   }
 }
