@@ -15,6 +15,14 @@
       "button": {
         "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
         "url": "https://t.me/"
+      },
+      "fixed_buttons": {
+        "close": {
+          "text": "ᴄʟᴏsᴇ",
+          "callback_data": "branding:close",
+          "locked": true,
+          "editable": false
+        }
       }
     },
     "/help": {
@@ -22,6 +30,14 @@
       "button": {
         "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
         "url": "https://t.me/"
+      },
+      "fixed_buttons": {
+        "close": {
+          "text": "ᴄʟᴏsᴇ",
+          "callback_data": "branding:close",
+          "locked": true,
+          "editable": false
+        }
       }
     },
     "/about": {
@@ -29,6 +45,14 @@
       "button": {
         "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
         "url": "https://t.me/"
+      },
+      "fixed_buttons": {
+        "close": {
+          "text": "ᴄʟᴏsᴇ",
+          "callback_data": "branding:close",
+          "locked": true,
+          "editable": false
+        }
       }
     },
     "/ping": {
@@ -36,6 +60,14 @@
       "button": {
         "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
         "url": "https://t.me/"
+      },
+      "fixed_buttons": {
+        "close": {
+          "text": "ᴄʟᴏsᴇ",
+          "callback_data": "branding:close",
+          "locked": true,
+          "editable": false
+        }
       }
     },
     "/settings": {
@@ -43,6 +75,14 @@
       "button": {
         "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
         "url": "https://t.me/"
+      },
+      "fixed_buttons": {
+        "close": {
+          "text": "ᴄʟᴏsᴇ",
+          "callback_data": "branding:close",
+          "locked": true,
+          "editable": false
+        }
       }
     },
     "/addch": {
@@ -50,6 +90,14 @@
       "button": {
         "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
         "url": "https://t.me/"
+      },
+      "fixed_buttons": {
+        "close": {
+          "text": "ᴄʟᴏsᴇ",
+          "callback_data": "branding:close",
+          "locked": true,
+          "editable": false
+        }
       }
     },
     "/addchat": {
@@ -57,6 +105,14 @@
       "button": {
         "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
         "url": "https://t.me/"
+      },
+      "fixed_buttons": {
+        "close": {
+          "text": "ᴄʟᴏsᴇ",
+          "callback_data": "branding:close",
+          "locked": true,
+          "editable": false
+        }
       }
     },
     "/delch": {
@@ -64,6 +120,14 @@
       "button": {
         "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
         "url": "https://t.me/"
+      },
+      "fixed_buttons": {
+        "close": {
+          "text": "ᴄʟᴏsᴇ",
+          "callback_data": "branding:close",
+          "locked": true,
+          "editable": false
+        }
       }
     },
     "/delchat": {
@@ -71,6 +135,14 @@
       "button": {
         "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
         "url": "https://t.me/"
+      },
+      "fixed_buttons": {
+        "close": {
+          "text": "ᴄʟᴏsᴇ",
+          "callback_data": "branding:close",
+          "locked": true,
+          "editable": false
+        }
       }
     },
     "/channels": {
@@ -78,6 +150,14 @@
       "button": {
         "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
         "url": "https://t.me/"
+      },
+      "fixed_buttons": {
+        "close": {
+          "text": "ᴄʟᴏsᴇ",
+          "callback_data": "branding:close",
+          "locked": true,
+          "editable": false
+        }
       }
     },
     "/channelpanel": {
@@ -85,6 +165,14 @@
       "button": {
         "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
         "url": "https://t.me/"
+      },
+      "fixed_buttons": {
+        "close": {
+          "text": "ᴄʟᴏsᴇ",
+          "callback_data": "branding:close",
+          "locked": true,
+          "editable": false
+        }
       }
     },
     "/genlink": {
@@ -92,6 +180,14 @@
       "button": {
         "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
         "url": "https://t.me/"
+      },
+      "fixed_buttons": {
+        "close": {
+          "text": "ᴄʟᴏsᴇ",
+          "callback_data": "branding:close",
+          "locked": true,
+          "editable": false
+        }
       }
     },
     "/bulklink": {
@@ -99,6 +195,14 @@
       "button": {
         "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
         "url": "https://t.me/"
+      },
+      "fixed_buttons": {
+        "close": {
+          "text": "ᴄʟᴏsᴇ",
+          "callback_data": "branding:close",
+          "locked": true,
+          "editable": false
+        }
       }
     },
     "/links": {
@@ -106,6 +210,14 @@
       "button": {
         "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
         "url": "https://t.me/"
+      },
+      "fixed_buttons": {
+        "close": {
+          "text": "ᴄʟᴏsᴇ",
+          "callback_data": "branding:close",
+          "locked": true,
+          "editable": false
+        }
       }
     },
     "/revoke_links": {
@@ -113,6 +225,14 @@
       "button": {
         "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
         "url": "https://t.me/"
+      },
+      "fixed_buttons": {
+        "close": {
+          "text": "ᴄʟᴏsᴇ",
+          "callback_data": "branding:close",
+          "locked": true,
+          "editable": false
+        }
       }
     },
     "/bulkexpire": {
@@ -120,6 +240,14 @@
       "button": {
         "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
         "url": "https://t.me/"
+      },
+      "fixed_buttons": {
+        "close": {
+          "text": "ᴄʟᴏsᴇ",
+          "callback_data": "branding:close",
+          "locked": true,
+          "editable": false
+        }
       }
     },
     "/setapproval": {
@@ -127,6 +255,14 @@
       "button": {
         "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
         "url": "https://t.me/"
+      },
+      "fixed_buttons": {
+        "close": {
+          "text": "ᴄʟᴏsᴇ",
+          "callback_data": "branding:close",
+          "locked": true,
+          "editable": false
+        }
       }
     },
     "/reqmode": {
@@ -134,6 +270,14 @@
       "button": {
         "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
         "url": "https://t.me/"
+      },
+      "fixed_buttons": {
+        "close": {
+          "text": "ᴄʟᴏsᴇ",
+          "callback_data": "branding:close",
+          "locked": true,
+          "editable": false
+        }
       }
     },
     "/reqtime": {
@@ -141,6 +285,14 @@
       "button": {
         "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
         "url": "https://t.me/"
+      },
+      "fixed_buttons": {
+        "close": {
+          "text": "ᴄʟᴏsᴇ",
+          "callback_data": "branding:close",
+          "locked": true,
+          "editable": false
+        }
       }
     },
     "/add_fsub": {
@@ -148,6 +300,14 @@
       "button": {
         "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
         "url": "https://t.me/"
+      },
+      "fixed_buttons": {
+        "close": {
+          "text": "ᴄʟᴏsᴇ",
+          "callback_data": "branding:close",
+          "locked": true,
+          "editable": false
+        }
       }
     },
     "/del_fsub": {
@@ -155,6 +315,14 @@
       "button": {
         "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
         "url": "https://t.me/"
+      },
+      "fixed_buttons": {
+        "close": {
+          "text": "ᴄʟᴏsᴇ",
+          "callback_data": "branding:close",
+          "locked": true,
+          "editable": false
+        }
       }
     },
     "/fsub": {
@@ -162,6 +330,14 @@
       "button": {
         "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
         "url": "https://t.me/"
+      },
+      "fixed_buttons": {
+        "close": {
+          "text": "ᴄʟᴏsᴇ",
+          "callback_data": "branding:close",
+          "locked": true,
+          "editable": false
+        }
       }
     },
     "/shorten": {
@@ -169,6 +345,14 @@
       "button": {
         "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
         "url": "https://t.me/"
+      },
+      "fixed_buttons": {
+        "close": {
+          "text": "ᴄʟᴏsᴇ",
+          "callback_data": "branding:close",
+          "locked": true,
+          "editable": false
+        }
       }
     },
     "/set_api": {
@@ -176,6 +360,14 @@
       "button": {
         "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
         "url": "https://t.me/"
+      },
+      "fixed_buttons": {
+        "close": {
+          "text": "ᴄʟᴏsᴇ",
+          "callback_data": "branding:close",
+          "locked": true,
+          "editable": false
+        }
       }
     },
     "/shortnerstatus": {
@@ -183,6 +375,14 @@
       "button": {
         "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
         "url": "https://t.me/"
+      },
+      "fixed_buttons": {
+        "close": {
+          "text": "ᴄʟᴏsᴇ",
+          "callback_data": "branding:close",
+          "locked": true,
+          "editable": false
+        }
       }
     },
     "/shortnerstats": {
@@ -190,6 +390,14 @@
       "button": {
         "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
         "url": "https://t.me/"
+      },
+      "fixed_buttons": {
+        "close": {
+          "text": "ᴄʟᴏsᴇ",
+          "callback_data": "branding:close",
+          "locked": true,
+          "editable": false
+        }
       }
     },
     "/linkhistory": {
@@ -197,6 +405,14 @@
       "button": {
         "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
         "url": "https://t.me/"
+      },
+      "fixed_buttons": {
+        "close": {
+          "text": "ᴄʟᴏsᴇ",
+          "callback_data": "branding:close",
+          "locked": true,
+          "editable": false
+        }
       }
     },
     "/channelstats": {
@@ -204,6 +420,14 @@
       "button": {
         "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
         "url": "https://t.me/"
+      },
+      "fixed_buttons": {
+        "close": {
+          "text": "ᴄʟᴏsᴇ",
+          "callback_data": "branding:close",
+          "locked": true,
+          "editable": false
+        }
       }
     },
     "/schedulelink": {
@@ -211,6 +435,14 @@
       "button": {
         "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
         "url": "https://t.me/"
+      },
+      "fixed_buttons": {
+        "close": {
+          "text": "ᴄʟᴏsᴇ",
+          "callback_data": "branding:close",
+          "locked": true,
+          "editable": false
+        }
       }
     },
     "/texts": {
@@ -218,6 +450,14 @@
       "button": {
         "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
         "url": "https://t.me/"
+      },
+      "fixed_buttons": {
+        "close": {
+          "text": "ᴄʟᴏsᴇ",
+          "callback_data": "branding:close",
+          "locked": true,
+          "editable": false
+        }
       }
     },
     "/edittext": {
@@ -225,6 +465,14 @@
       "button": {
         "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
         "url": "https://t.me/"
+      },
+      "fixed_buttons": {
+        "close": {
+          "text": "ᴄʟᴏsᴇ",
+          "callback_data": "branding:close",
+          "locked": true,
+          "editable": false
+        }
       }
     },
     "/previewtext": {
@@ -232,6 +480,14 @@
       "button": {
         "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
         "url": "https://t.me/"
+      },
+      "fixed_buttons": {
+        "close": {
+          "text": "ᴄʟᴏsᴇ",
+          "callback_data": "branding:close",
+          "locked": true,
+          "editable": false
+        }
       }
     },
     "/resettext": {
@@ -239,6 +495,14 @@
       "button": {
         "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
         "url": "https://t.me/"
+      },
+      "fixed_buttons": {
+        "close": {
+          "text": "ᴄʟᴏsᴇ",
+          "callback_data": "branding:close",
+          "locked": true,
+          "editable": false
+        }
       }
     },
     "/buttons": {
@@ -246,6 +510,14 @@
       "button": {
         "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
         "url": "https://t.me/"
+      },
+      "fixed_buttons": {
+        "close": {
+          "text": "ᴄʟᴏsᴇ",
+          "callback_data": "branding:close",
+          "locked": true,
+          "editable": false
+        }
       }
     },
     "/addbutton": {
@@ -253,6 +525,14 @@
       "button": {
         "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
         "url": "https://t.me/"
+      },
+      "fixed_buttons": {
+        "close": {
+          "text": "ᴄʟᴏsᴇ",
+          "callback_data": "branding:close",
+          "locked": true,
+          "editable": false
+        }
       }
     },
     "/editbutton": {
@@ -260,6 +540,14 @@
       "button": {
         "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
         "url": "https://t.me/"
+      },
+      "fixed_buttons": {
+        "close": {
+          "text": "ᴄʟᴏsᴇ",
+          "callback_data": "branding:close",
+          "locked": true,
+          "editable": false
+        }
       }
     },
     "/delbutton": {
@@ -267,6 +555,14 @@
       "button": {
         "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
         "url": "https://t.me/"
+      },
+      "fixed_buttons": {
+        "close": {
+          "text": "ᴄʟᴏsᴇ",
+          "callback_data": "branding:close",
+          "locked": true,
+          "editable": false
+        }
       }
     }
   },
