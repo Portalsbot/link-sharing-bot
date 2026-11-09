@@ -1,37 +1,98 @@
-"""Branded sender: each text response is a local photo + its own text + inline button."""
+"""Branded Telegram photo responses with persistent inline controls and a fixed close action."""
 from __future__ import annotations
-from pathlib import Path
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-from .formatting import caption_chunks, SMALL_CAPS as SMALL_CAPS_MAP
-from .branding_config import FOOTER_MESSAGE, DUMMY_BUTTON_TEXT, DUMMY_BUTTON_URL, IMAGE_PATH
 
-async def send_branded(bot, chat_id: int, text: str, *, image_url: str, image_path: str | None = None,
-                       small_caps: bool = True, reply_markup=None, reply_to_message_id=None,
-                       disable_notification: bool = False):
+from pathlib import Path
+
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.error import TelegramError
+
+from .formatting import caption_chunks, SMALL_CAPS as SMALL_CAPS_MAP
+from .branding_config import FOOTER_MESSAGE, IMAGE_PATH
+
+
+CLOSE_BUTTON_TEXT = "ᴄʟᴏsᴇ"
+CLOSE_CALLBACK_DATA = "branding:close"
+
+
+def _small_caps_markup(markup):
+    if not markup:
+        return None
+    rows = []
+    for row in markup.inline_keyboard:
+        converted = []
+        for button in row:
+            data = button.to_dict()
+            data["text"] = str(data.get("text", "")).translate(SMALL_CAPS_MAP)
+            converted.append(InlineKeyboardButton(**data))
+        if converted:
+            rows.append(converted)
+    return rows
+
+
+async def send_branded(
+    bot,
+    chat_id: int,
+    text: str,
+    *,
+    image_url: str,
+    image_path: str | None = None,
+    small_caps: bool = True,
+    reply_markup=None,
+    reply_to_message_id=None,
+    disable_notification: bool = False,
+):
     body = str(text or "")
     if FOOTER_MESSAGE:
-        body = f"{body}\n\n{FOOTER_MESSAGE}" if body else FOOTER_MESSAGE
+        body = f"{body}\\n\\n{FOOTER_MESSAGE}" if body else FOOTER_MESSAGE
+
     requested_path = Path(image_path) if image_path else IMAGE_PATH
     local_photo = requested_path if requested_path.is_file() else None
     chunks = caption_chunks(body, small_caps=small_caps, limit=700)
-    rows = list(reply_markup.inline_keyboard) if reply_markup else []
-    rows.append([InlineKeyboardButton(DUMMY_BUTTON_TEXT.translate(SMALL_CAPS_MAP) if small_caps else DUMMY_BUTTON_TEXT,
-                                      url=DUMMY_BUTTON_URL)])
-    markup = InlineKeyboardMarkup(rows)
+    command_rows = _small_caps_markup(reply_markup) if small_caps else (
+        list(reply_markup.inline_keyboard) if reply_markup else []
+    )
+
     sent = []
     for index, caption in enumerate(chunks):
-        current_markup = markup if index == len(chunks) - 1 else None
-        kwargs = {"chat_id": chat_id, "caption": caption, "parse_mode": "HTML",
-                  "reply_markup": current_markup, "disable_notification": disable_notification}
+        rows = command_rows if index == len(chunks) - 1 else []
+        rows = list(rows or [])
+        close_label = CLOSE_BUTTON_TEXT.translate(SMALL_CAPS_MAP) if small_caps else CLOSE_BUTTON_TEXT
+        rows.append([InlineKeyboardButton(close_label, callback_data=CLOSE_CALLBACK_DATA)])
+        markup = InlineKeyboardMarkup(rows)
+
+        kwargs = {
+            "chat_id": chat_id,
+            "caption": caption,
+            "parse_mode": "HTML",
+            "reply_markup": markup,
+            "disable_notification": disable_notification,
+        }
         if reply_to_message_id and index == 0:
             kwargs["reply_to_message_id"] = reply_to_message_id
+
         if local_photo:
             with local_photo.open("rb") as photo_file:
                 message = await bot.send_photo(photo=photo_file, **kwargs)
         else:
             message = await bot.send_photo(photo=image_url, **kwargs)
         sent.append(message)
+
     return sent[-1] if sent else None
+
+
+async def close_branded_message(update, context):
+    query = update.callback_query
+    if query is None:
+        return
+    message = query.message
+    try:
+        if message is None:
+            raise TelegramError("Callback message is unavailable")
+        await message.delete()
+        await query.answer("ᴄʟᴏsᴇᴅ.")
+    except TelegramError:
+        await query.answer("ᴄᴏᴜʟᴅ ɴᴏᴛ ᴄʟᴏsᴇ ᴛʜɪs ᴍᴇssᴀɢᴇ.", show_alert=True)
+
 
 def keyboard_from_buttons(rows: list, small_caps: bool = True) -> InlineKeyboardMarkup | None:
     if not rows:
