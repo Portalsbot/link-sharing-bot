@@ -5,12 +5,11 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 from dotenv import load_dotenv
+from .branding_config import IMAGE_URL as BRANDING_IMAGE_DEFAULT, SMALL_CAPS as BRANDING_SMALL_CAPS
 
 load_dotenv()
 
-BRANDING_IMAGE_SOURCE = "https://github.com/Portalsbot/image/blob/main/photo_2026-11-01_20-42-48.jpg"
-BRANDING_IMAGE_DEFAULT = "https://raw.githubusercontent.com/Portalsbot/image/main/photo_2026-11-01_20-42-48.jpg"
-
+BRANDING_IMAGE_SOURCE = BRANDING_IMAGE_DEFAULT
 
 def _load_config_file() -> dict:
     path = os.getenv("CONFIG_FILE")
@@ -19,14 +18,15 @@ def _load_config_file() -> dict:
     p = Path(path)
     if not p.is_file():
         raise RuntimeError(f"CONFIG_FILE does not exist: {path}")
-    return json.loads(p.read_text(encoding="utf-8"))
+    data = json.loads(p.read_text(encoding="utf-8"))
+    if not isinstance(data, dict):
+        raise RuntimeError("CONFIG_FILE must contain a JSON object.")
+    return data
 
 _FILE_CONFIG = _load_config_file()
 
-
 def value(name: str, default=None):
     return os.getenv(name, _FILE_CONFIG.get(name, default))
-
 
 @dataclass(frozen=True)
 class Settings:
@@ -64,7 +64,7 @@ class Settings:
             clone_id=str(value("CLONE_ID", "official")),
             branding_image_url=str(value("BRANDING_IMAGE_URL", BRANDING_IMAGE_DEFAULT)),
             branding_image_path=value("BRANDING_IMAGE_PATH"),
-            small_caps=str(value("SMALL_CAPS", "true")).lower() in {"1", "true", "yes", "on"},
+            small_caps=str(value("SMALL_CAPS", str(BRANDING_SMALL_CAPS))).lower() in {"1", "true", "yes", "on"},
             storage_channel_id=int(storage_channel) if storage_channel else None,
             storage_api_url=value("STORAGE_API_URL"),
             storage_api_key=value("STORAGE_API_KEY"),
