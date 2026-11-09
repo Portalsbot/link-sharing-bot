@@ -1,4 +1,4 @@
-"""Branded Telegram photo responses with persistent inline controls and a fixed close action."""
+"""Branded Telegram photo responses with persistent inline controls and fixed utility buttons."""
 from __future__ import annotations
 
 from pathlib import Path
@@ -7,7 +7,12 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.error import TelegramError
 
 from .formatting import caption_chunks, SMALL_CAPS as SMALL_CAPS_MAP
-from .branding_config import FOOTER_MESSAGE, IMAGE_PATH
+from .branding_config import (
+    FOOTER_MESSAGE,
+    IMAGE_PATH,
+    DUMMY_BUTTON_TEXT,
+    DUMMY_BUTTON_URL,
+)
 
 CLOSE_BUTTON_TEXT = "ᴄʟᴏsᴇ"
 CLOSE_CALLBACK_DATA = "branding:close"
@@ -54,8 +59,12 @@ async def send_branded(
     sent = []
     for index, caption in enumerate(chunks):
         rows = list(command_rows or []) if index == len(chunks) - 1 else []
-        close_label = CLOSE_BUTTON_TEXT.translate(SMALL_CAPS_MAP) if small_caps else CLOSE_BUTTON_TEXT
-        rows.append([InlineKeyboardButton(close_label, callback_data=CLOSE_CALLBACK_DATA)])
+        # The configurable dummy URL button and fixed close callback are always present.
+        dummy_label = DUMMY_BUTTON_TEXT
+        if small_caps:
+            dummy_label = dummy_label.translate(SMALL_CAPS_MAP)
+        rows.append([InlineKeyboardButton(dummy_label, url=DUMMY_BUTTON_URL)])
+        rows.append([InlineKeyboardButton(CLOSE_BUTTON_TEXT, callback_data=CLOSE_CALLBACK_DATA)])
         markup = InlineKeyboardMarkup(rows)
         kwargs = {
             "chat_id": chat_id,
