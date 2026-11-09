@@ -9,7 +9,6 @@ from telegram.error import TelegramError
 from .formatting import caption_chunks, SMALL_CAPS as SMALL_CAPS_MAP
 from .branding_config import FOOTER_MESSAGE, IMAGE_PATH
 
-
 CLOSE_BUTTON_TEXT = "ᴄʟᴏsᴇ"
 CLOSE_CALLBACK_DATA = "branding:close"
 
@@ -43,7 +42,7 @@ async def send_branded(
 ):
     body = str(text or "")
     if FOOTER_MESSAGE:
-        body = f"{body}\\n\\n{FOOTER_MESSAGE}" if body else FOOTER_MESSAGE
+        body = f"{body}\n\n{FOOTER_MESSAGE}" if body else FOOTER_MESSAGE
 
     requested_path = Path(image_path) if image_path else IMAGE_PATH
     local_photo = requested_path if requested_path.is_file() else None
@@ -54,12 +53,10 @@ async def send_branded(
 
     sent = []
     for index, caption in enumerate(chunks):
-        rows = command_rows if index == len(chunks) - 1 else []
-        rows = list(rows or [])
+        rows = list(command_rows or []) if index == len(chunks) - 1 else []
         close_label = CLOSE_BUTTON_TEXT.translate(SMALL_CAPS_MAP) if small_caps else CLOSE_BUTTON_TEXT
         rows.append([InlineKeyboardButton(close_label, callback_data=CLOSE_CALLBACK_DATA)])
         markup = InlineKeyboardMarkup(rows)
-
         kwargs = {
             "chat_id": chat_id,
             "caption": caption,
@@ -84,11 +81,10 @@ async def close_branded_message(update, context):
     query = update.callback_query
     if query is None:
         return
-    message = query.message
     try:
-        if message is None:
+        if query.message is None:
             raise TelegramError("Callback message is unavailable")
-        await message.delete()
+        await query.message.delete()
         await query.answer("ᴄʟᴏsᴇᴅ.")
     except TelegramError:
         await query.answer("ᴄᴏᴜʟᴅ ɴᴏᴛ ᴄʟᴏsᴇ ᴛʜɪs ᴍᴇssᴀɢᴇ.", show_alert=True)
