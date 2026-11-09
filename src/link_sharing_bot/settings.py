@@ -3,6 +3,7 @@ from telegram import Update
 from telegram.ext import ContextTypes, CommandHandler
 from .branding import send_branded, keyboard_from_buttons
 
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     key = "file.start" if context.application.bot_data["product"] == "file" else "link.start"
     body = await context.application.bot_data["db"].get_text(
@@ -21,6 +22,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                        image_path=context.application.bot_data["image_path"],
                        small_caps=context.application.bot_data["small_caps"], reply_markup=markup)
 
+
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     key = "file.help" if context.application.bot_data["product"] == "file" else "link.help"
     body = await context.application.bot_data["db"].get_text(
@@ -33,6 +35,7 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
                        image_url=context.application.bot_data["image_url"],
                        image_path=context.application.bot_data["image_path"],
                        small_caps=context.application.bot_data["small_caps"], reply_markup=markup)
+
 
 async def about(update: Update, context: ContextTypes.DEFAULT_TYPE):
     key = "file.about" if context.application.bot_data["product"] == "file" else "link.about"
@@ -47,23 +50,24 @@ async def about(update: Update, context: ContextTypes.DEFAULT_TYPE):
                        image_path=context.application.bot_data["image_path"],
                        small_caps=context.application.bot_data["small_caps"], reply_markup=markup)
 
+
 async def ping(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await send_branded(context.bot, update.effective_chat.id, "ᴘᴏɴɢ · ʙᴏᴛ ɪs ʀᴇsᴘᴏɴᴅɪɴɢ.",
                        image_url=context.application.bot_data["image_url"],
                        image_path=context.application.bot_data["image_path"],
                        small_caps=context.application.bot_data["small_caps"])
 
+
 async def settings(update: Update, context: ContextTypes.DEFAULT_TYPE):
     body = ("**sᴇᴛᴛɪɴɢs**\n\n"
             "/texts — edit messages\n/buttons TEMPLATE_KEY — manage inline buttons\n"
             "/dlt_time SECONDS — set delivery auto-delete (File Sharing)\n"
             "/help — command guide")
-    rows = await context.application.bot_data["db"].get_buttons(context.application.bot_data["clone_id"], key)
-    markup = keyboard_from_buttons(rows, small_caps=context.application.bot_data["small_caps"])
     await send_branded(context.bot, update.effective_chat.id, body,
                        image_url=context.application.bot_data["image_url"],
                        image_path=context.application.bot_data["image_path"],
-                       small_caps=context.application.bot_data["small_caps"], reply_markup=markup)
+                       small_caps=context.application.bot_data["small_caps"])
+
 
 def add_common_handlers(app):
     app.add_handler(CommandHandler("start", start))
