@@ -10,10 +10,9 @@ async def send_branded(bot, chat_id: int, text: str, *, image_url: str, image_pa
                        disable_notification: bool = False):
     body = str(text or "")
     if FOOTER_MESSAGE:
-        body = f"{body}\\n\\n{FOOTER_MESSAGE}" if body else FOOTER_MESSAGE
+        body = f"{body}\n\n{FOOTER_MESSAGE}" if body else FOOTER_MESSAGE
     photo = str(Path(image_path)) if image_path and Path(image_path).is_file() else image_url
-    chunks = caption_chunks(body, small_caps=small_caps, limit=850)
-    # Always add the required dummy button, preserving any command-specific buttons.
+    chunks = caption_chunks(body, small_caps=small_caps, limit=700)
     rows = list(reply_markup.inline_keyboard) if reply_markup else []
     rows.append([InlineKeyboardButton(DUMMY_BUTTON_TEXT.translate(SMALL_CAPS_MAP) if small_caps else DUMMY_BUTTON_TEXT,
                                       url=DUMMY_BUTTON_URL)])
@@ -25,14 +24,7 @@ async def send_branded(bot, chat_id: int, text: str, *, image_url: str, image_pa
                   "reply_markup": current_markup, "disable_notification": disable_notification}
         if reply_to_message_id and index == 0:
             kwargs["reply_to_message_id"] = reply_to_message_id
-        try:
-            message = await bot.send_photo(**kwargs)
-        except Exception:
-            text_kwargs = {"chat_id": chat_id, "text": caption, "parse_mode": "HTML",
-                           "reply_markup": current_markup, "disable_notification": disable_notification}
-            if reply_to_message_id and index == 0:
-                text_kwargs["reply_to_message_id"] = reply_to_message_id
-            message = await bot.send_message(**text_kwargs)
+        message = await bot.send_photo(**kwargs)
         sent.append(message)
     return sent[-1] if sent else None
 
