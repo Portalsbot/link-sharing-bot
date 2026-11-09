@@ -1,0 +1,281 @@
+{
+  "schema_version": 1,
+  "branding": {
+    "image_url": "https://raw.githubusercontent.com/Portalsbot/image/main/photo_2026-11-01_20-42-48.jpg",
+    "small_caps": true,
+    "dummy_button": {
+      "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
+      "url": "https://t.me/"
+    },
+    "footer_text": ""
+  },
+  "commands": {
+    "/start": {
+      "text": "ᴡᴇʟᴄᴏᴍᴇ ᴛᴏ ʟɪɴᴋ sʜᴀʀɪɴɢ ʙᴏᴛ.",
+      "button": {
+        "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
+        "url": "https://t.me/"
+      }
+    },
+    "/help": {
+      "text": "ʟɪɴᴋ sʜᴀʀɪɴɢ ᴄᴏᴍᴍᴀɴᴅ ɢᴜɪᴅᴇ.",
+      "button": {
+        "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
+        "url": "https://t.me/"
+      }
+    },
+    "/about": {
+      "text": "ᴀʙᴏᴜᴛ ᴛʜɪs ʟɪɴᴋ sʜᴀʀɪɴɢ ʙᴏᴛ.",
+      "button": {
+        "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
+        "url": "https://t.me/"
+      }
+    },
+    "/ping": {
+      "text": "ʙᴏᴛ ʀᴇsᴘᴏɴsᴇ ᴀɴᴅ ʜᴇᴀʟᴛʜ ᴄʜᴇᴄᴋ.",
+      "button": {
+        "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
+        "url": "https://t.me/"
+      }
+    },
+    "/settings": {
+      "text": "ʟɪɴᴋ ʙᴏᴛ sᴇᴛᴛɪɴɢs ɢᴜɪᴅᴇ.",
+      "button": {
+        "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
+        "url": "https://t.me/"
+      }
+    },
+    "/addch": {
+      "text": "ᴄʜᴀɴɴᴇʟ ʀᴇɢɪsᴛʀᴀᴛɪᴏɴ ʀᴇsᴜʟᴛ.",
+      "button": {
+        "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
+        "url": "https://t.me/"
+      }
+    },
+    "/addchat": {
+      "text": "ᴀʟɪᴀs ғᴏʀ ᴄʜᴀɴɴᴇʟ ʀᴇɢɪsᴛʀᴀᴛɪᴏɴ.",
+      "button": {
+        "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
+        "url": "https://t.me/"
+      }
+    },
+    "/delch": {
+      "text": "ᴄʜᴀɴɴᴇʟ ʀᴇᴍᴏᴠᴀʟ ʀᴇsᴜʟᴛ.",
+      "button": {
+        "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
+        "url": "https://t.me/"
+      }
+    },
+    "/delchat": {
+      "text": "ᴀʟɪᴀs ғᴏʀ ᴄʜᴀɴɴᴇʟ ʀᴇᴍᴏᴠᴀʟ.",
+      "button": {
+        "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
+        "url": "https://t.me/"
+      }
+    },
+    "/channels": {
+      "text": "ʀᴇɢɪsᴛᴇʀᴇᴅ ᴄʜᴀɴɴᴇʟ ʟɪsᴛ.",
+      "button": {
+        "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
+        "url": "https://t.me/"
+      }
+    },
+    "/channelpanel": {
+      "text": "ᴄʜᴀɴɴᴇʟ ᴅᴀsʜʙᴏᴀʀᴅ.",
+      "button": {
+        "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
+        "url": "https://t.me/"
+      }
+    },
+    "/genlink": {
+      "text": "ɪɴᴠɪᴛᴇ ʟɪɴᴋ ɢᴇɴᴇʀᴀᴛɪᴏɴ ʀᴇsᴜʟᴛ.",
+      "button": {
+        "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
+        "url": "https://t.me/"
+      }
+    },
+    "/bulklink": {
+      "text": "ʙᴜʟᴋ ɪɴᴠɪᴛᴇ ʟɪɴᴋ ɢᴇɴᴇʀᴀᴛɪᴏɴ ʀᴇsᴜʟᴛ.",
+      "button": {
+        "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
+        "url": "https://t.me/"
+      }
+    },
+    "/links": {
+      "text": "ʀᴇᴄᴇɴᴛ ɪɴᴠɪᴛᴇ ʟɪɴᴋs ᴀɴᴅ sᴛᴀᴛᴜs.",
+      "button": {
+        "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
+        "url": "https://t.me/"
+      }
+    },
+    "/revoke_links": {
+      "text": "ɪɴᴠɪᴛᴇ ʟɪɴᴋ ʀᴇᴠᴏᴄᴀᴛɪᴏɴ ʀᴇsᴜʟᴛ.",
+      "button": {
+        "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
+        "url": "https://t.me/"
+      }
+    },
+    "/bulkexpire": {
+      "text": "ʙᴜʟᴋ ᴇxᴘɪʀʏ ᴘᴏʟɪᴄʏ ʀᴇsᴜʟᴛ.",
+      "button": {
+        "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
+        "url": "https://t.me/"
+      }
+    },
+    "/setapproval": {
+      "text": "ᴄʜᴀɴɴᴇʟ ᴀᴘᴘʀᴏᴠᴀʟ ᴘᴏʟɪᴄʏ ʀᴇsᴜʟᴛ.",
+      "button": {
+        "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
+        "url": "https://t.me/"
+      }
+    },
+    "/reqmode": {
+      "text": "ᴊᴏɪɴ ʀᴇǫᴜᴇsᴛ ᴍᴏᴅᴇ ᴜᴘᴅᴀᴛᴇ.",
+      "button": {
+        "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
+        "url": "https://t.me/"
+      }
+    },
+    "/reqtime": {
+      "text": "ᴊᴏɪɴ ʀᴇǫᴜᴇsᴛ ᴛɪᴍɪɴɢ ᴜᴘᴅᴀᴛᴇ.",
+      "button": {
+        "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
+        "url": "https://t.me/"
+      }
+    },
+    "/add_fsub": {
+      "text": "ғᴏʀᴄᴇ sᴜʙsᴄʀɪᴘᴛɪᴏɴ ᴄʜᴀɴɴᴇʟ ᴀᴅᴅ ʀᴇsᴜʟᴛ.",
+      "button": {
+        "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
+        "url": "https://t.me/"
+      }
+    },
+    "/del_fsub": {
+      "text": "ғᴏʀᴄᴇ sᴜʙsᴄʀɪᴘᴛɪᴏɴ ᴄʜᴀɴɴᴇʟ ʀᴇᴍᴏᴠᴀʟ.",
+      "button": {
+        "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
+        "url": "https://t.me/"
+      }
+    },
+    "/fsub": {
+      "text": "ғᴏʀᴄᴇ sᴜʙsᴄʀɪᴘᴛɪᴏɴ ᴄʜᴀɴɴᴇʟ ʟɪsᴛ.",
+      "button": {
+        "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
+        "url": "https://t.me/"
+      }
+    },
+    "/shorten": {
+      "text": "ᴜʀʟ sʜᴏʀᴛᴇɴɪɴɢ ʀᴇsᴜʟᴛ.",
+      "button": {
+        "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
+        "url": "https://t.me/"
+      }
+    },
+    "/set_api": {
+      "text": "sʜᴏʀᴛᴇɴᴇʀ ᴀᴘɪ ᴄᴏɴғɪɢᴜʀᴀᴛɪᴏɴ ʀᴇsᴜʟᴛ.",
+      "button": {
+        "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
+        "url": "https://t.me/"
+      }
+    },
+    "/shortnerstatus": {
+      "text": "sʜᴏʀᴛᴇɴᴇʀ sᴛᴀᴛᴜs.",
+      "button": {
+        "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
+        "url": "https://t.me/"
+      }
+    },
+    "/shortnerstats": {
+      "text": "sʜᴏʀᴛᴇɴᴇʀ ᴜsᴀɢᴇ sᴛᴀᴛɪsᴛɪᴄs.",
+      "button": {
+        "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
+        "url": "https://t.me/"
+      }
+    },
+    "/linkhistory": {
+      "text": "sʜᴏʀᴛᴇɴᴇʀ ʟɪɴᴋ ʜɪsᴛᴏʀʏ.",
+      "button": {
+        "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
+        "url": "https://t.me/"
+      }
+    },
+    "/channelstats": {
+      "text": "ᴄʜᴀɴɴᴇʟ ᴊᴏɪɴ ᴀɴᴀʟʏᴛɪᴄs.",
+      "button": {
+        "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
+        "url": "https://t.me/"
+      }
+    },
+    "/schedulelink": {
+      "text": "sᴄʜᴇᴅᴜʟᴇᴅ ɪɴᴠɪᴛᴇ ʟɪɴᴋ ʀᴇsᴜʟᴛ.",
+      "button": {
+        "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
+        "url": "https://t.me/"
+      }
+    },
+    "/texts": {
+      "text": "ᴇᴅɪᴛᴀʙʟᴇ ᴍᴇssᴀɢᴇ ᴛᴇᴍᴘʟᴀᴛᴇ ʟɪsᴛ.",
+      "button": {
+        "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
+        "url": "https://t.me/"
+      }
+    },
+    "/edittext": {
+      "text": "ᴍᴇssᴀɢᴇ ᴛᴇᴍᴘʟᴀᴛᴇ ᴇᴅɪᴛᴏʀ.",
+      "button": {
+        "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
+        "url": "https://t.me/"
+      }
+    },
+    "/previewtext": {
+      "text": "ᴍᴇssᴀɢᴇ ᴛᴇᴍᴘʟᴀᴛᴇ ᴘʀᴇᴠɪᴇᴡ.",
+      "button": {
+        "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
+        "url": "https://t.me/"
+      }
+    },
+    "/resettext": {
+      "text": "ᴍᴇssᴀɢᴇ ᴛᴇᴍᴘʟᴀᴛᴇ ʀᴇsᴇᴛ.",
+      "button": {
+        "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
+        "url": "https://t.me/"
+      }
+    },
+    "/buttons": {
+      "text": "ᴛᴇᴍᴘʟᴀᴛᴇ ʙᴜᴛᴛᴏɴ ʟɪsᴛ.",
+      "button": {
+        "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
+        "url": "https://t.me/"
+      }
+    },
+    "/addbutton": {
+      "text": "ᴛᴇᴍᴘʟᴀᴛᴇ ʙᴜᴛᴛᴏɴ ᴀᴅᴅ ʀᴇsᴜʟᴛ.",
+      "button": {
+        "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
+        "url": "https://t.me/"
+      }
+    },
+    "/editbutton": {
+      "text": "ᴛᴇᴍᴘʟᴀᴛᴇ ʙᴜᴛᴛᴏɴ ᴇᴅɪᴛ ʀᴇsᴜʟᴛ.",
+      "button": {
+        "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
+        "url": "https://t.me/"
+      }
+    },
+    "/delbutton": {
+      "text": "ᴛᴇᴍᴘʟᴀᴛᴇ ʙᴜᴛᴛᴏɴ ʀᴇᴍᴏᴠᴀʟ ʀᴇsᴜʟᴛ.",
+      "button": {
+        "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
+        "url": "https://t.me/"
+      }
+    }
+  },
+  "fixed_buttons": {
+    "close": {
+      "text": "ᴄʟᴏsᴇ",
+      "callback_data": "branding:close",
+      "locked": true,
+      "editable": false
+    }
+  }
+}
