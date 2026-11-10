@@ -31,7 +31,7 @@ def main():
     admins={int(x) for x in os.getenv("ADMINS","").replace(","," ").split() if x.isdigit()}
     app=(ApplicationBuilder().token(settings.bot_token).post_init(post_init).post_shutdown(post_shutdown).build())
     app.bot_data.update({"settings":settings,"owner_id":settings.owner_id,"admins":admins,"clone_id":settings.clone_id,
-        "image_url":settings.branding_image_url,"image_path":settings.branding_image_path,"small_caps":settings.small_caps,
+        "image_url":settings.branding_image_url,"image_path":settings.branding_image_path,"small_caps":settings.small_caps,"channel_url":os.getenv("CHANNEL_URL","").strip(),
         "defaults":DEFAULT_MESSAGES,"product":"link"})
     app.add_handler(CallbackQueryHandler(close_branded_message, pattern=r"^branding:close$"), group=-1)
     add_common_handlers(app); add_editor_handlers(app); add_link_handlers(app); app.add_error_handler(error_handler)
