@@ -1,7 +1,11 @@
 from __future__ import annotations
 import logging
+import os
+import socket
+import ipaddress
 from datetime import datetime, timedelta, timezone
 from urllib.parse import urlparse
+from cryptography.fernet import Fernet, InvalidToken
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import CallbackQueryHandler
 import httpx
@@ -24,6 +28,37 @@ async def reply(update, context, body, template_key: str | None = None):
         image_url=context.application.bot_data["image_url"], image_path=context.application.bot_data["image_path"],
         small_caps=context.application.bot_data["small_caps"], reply_markup=markup)
 
+
+
+def _shortener_fernet():
+    key = os.getenv("SHORTENER_ENCRYPTION_KEY", "").strip()
+    if not key:
+        raise RuntimeError("SHORTENER_ENCRYPTION_KEY is not configured.")
+    try:
+        return Fernet(key.encode("ascii"))
+    except Exception as exc:
+        raise RuntimeError("SHORTENER_ENCRYPTION_KEY is invalid; use a Fernet key.") from exc
+
+
+def _validate_shortener_endpoint(endpoint: str):
+    parsed = urlparse(endpoint)
+    if parsed.scheme != "https" or not parsed.hostname or parsed.username or parsed.password:
+        raise ValueError("Shortener endpoint must be a valid HTTPS URL without embedded credentials.")
+    allowed = {host.strip().lower() for host in os.getenv("SHORTENER_ALLOWED_HOSTS", "").split(",") if host.strip()}
+    hostname = parsed.hostname.lower()
+    if not allowed or hostname not in allowed:
+        raise ValueError("Endpoint host is not allowlisted. Configure SHORTENER_ALLOWED_HOSTS with its exact hostname.")
+    try:
+        addresses = {item[4][0] for item in socket.getaddrinfo(hostname, parsed.port or 443, type=socket.SOCK_STREAM)}
+        if not addresses:
+            raise ValueError("Endpoint hostname did not resolve.")
+        for address in addresses:
+            ip = ipaddress.ip_address(address)
+            if not ip.is_global:
+                raise ValueError("Endpoint resolves to a non-public IP address.")
+    except socket.gaierror as exc:
+        raise ValueError("Endpoint hostname could not be resolved.") from exc
+    return parsed
 
 
 def _public_slug(channel_id: int) -> str:
@@ -459,13 +494,17 @@ async def shorten(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await db.require().execute("INSERT INTO link_shortener_events(clone_id,original_url,status) VALUES($1,$2,'not_configured')",context.application.bot_data["clone_id"],url)
             else:
                 import json
-                cfg=json.loads(config["setting_value"]); endpoint=cfg["endpoint"]
-                if not endpoint.startswith("https://"):
-                    body="Shortener endpoint must use HTTPS."
+                try:
+                    cfg=json.loads(config["setting_value"])
+                    endpoint=cfg["endpoint"]
+                    _validate_shortener_endpoint(endpoint)
+                    api_key=_shortener_fernet().decrypt(cfg["api_key"].encode()).decode()
+                except (ValueError, InvalidToken, RuntimeError, KeyError, TypeError) as exc:
+                    body=f"Shortener security configuration error: {str(exc)[:160]}"
                 else:
                     try:
-                        async with httpx.AsyncClient(timeout=15,follow_redirects=False) as client:
-                            response=await client.get(endpoint,params={"api":cfg["api_key"],"url":url})
+                        async with httpx.AsyncClient(timeout=15,follow_redirects=False,trust_env=False) as client:
+                            response=await client.get(endpoint,params={"api":api_key,"url":url})
                             response.raise_for_status(); data=response.json()
                         short=data.get("shortenedUrl") or data.get("short_url") or data.get("url")
                         if not short: raise ValueError("Provider response did not contain a shortened URL")
@@ -477,20 +516,22 @@ async def shorten(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await reply(update, context, body)
 
 async def set_api(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not is_admin(update, context): return
+    if update.effective_user.id != context.application.bot_data["owner_id"]:
+        return
     if len(context.args)!=2:
-        body="Usage: `/set_api HTTPS_ENDPOINT API_KEY` (owner/admin only; endpoint must be trusted)."
+        body="Usage: /set_api HTTPS_ENDPOINT API_KEY. Owner only."
     else:
         endpoint,key=context.args
-        parsed=urlparse(endpoint)
-        if parsed.scheme!="https" or not parsed.netloc or parsed.username or parsed.password:
-            body="Use a valid HTTPS endpoint without embedded credentials."
-        else:
+        try:
+            _validate_shortener_endpoint(endpoint)
+            encrypted_key=_shortener_fernet().encrypt(key.encode()).decode()
             import json
             await context.application.bot_data["db"].require().execute(
                 "INSERT INTO link_settings(clone_id,setting_key,setting_value) VALUES($1,'shortener_config',$2) ON CONFLICT(clone_id,setting_key) DO UPDATE SET setting_value=EXCLUDED.setting_value,updated_at=NOW()",
-                context.application.bot_data["clone_id"],json.dumps({"endpoint":endpoint,"api_key":key}))
-            body="Shortener configuration saved. Test it using /shorten."
+                context.application.bot_data["clone_id"],json.dumps({"endpoint":endpoint,"api_key":encrypted_key}))
+            body="Shortener configuration saved with encrypted API credentials."
+        except Exception as exc:
+            body=f"Shortener configuration rejected: {str(exc)[:180]}"
     await reply(update, context, body)
 
 async def shortnerstatus(update: Update, context: ContextTypes.DEFAULT_TYPE):
