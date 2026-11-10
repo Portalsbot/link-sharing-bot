@@ -159,7 +159,7 @@ async def open_public_entry(update: Update, context, slug: str) -> bool:
             body = f"An invitation could not be generated: {type(exc).__name__}. Please contact the channel administrator."
             markup = None
     else:
-        body = f"{row['title']}\\n\\nThis saved destination link does not have an automatic expiry. It remains available until its owner disables this entry or the destination itself becomes unavailable."
+        body = f"{row['title']}\n\nThis saved destination link does not have an automatic expiry. It remains available until its owner disables this entry or the destination itself becomes unavailable."
         markup = keyboard_from_buttons([[{"text": "· ᴏᴘᴇɴ ʟɪɴᴋ ·", "url": row["target_url"]}]], small_caps=True)
     await send_branded(context.bot, update.effective_chat.id, body,
         image_url=context.application.bot_data["image_url"], image_path=context.application.bot_data["image_path"],
@@ -192,7 +192,7 @@ async def addch(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     context.application.bot_data["clone_id"], slug, channel_id, chat.title or str(channel_id), update.effective_user.id)
                 me = await context.bot.get_me()
                 public_url = f"https://t.me/{me.username}?start={slug}"
-                body = f"✅ Channel registered: {chat.title} (`{channel_id}`).\\n\\nPermanent public bot link (share this):\\n{public_url}\\n\\nEach /start through this link generates a fresh channel invite using this channel's configured TTL."
+                body = f"✅ Channel registered: {chat.title} (`{channel_id}`).\n\nPermanent public bot link (share this):\n{public_url}\n\nEach /start through this link generates a fresh channel invite using this channel's configured TTL."
         except (ValueError, TypeError): body = "Channel ID must be numeric."
         except Exception as exc: body = f"Could not register channel: {type(exc).__name__}. Check bot membership and permissions."
     await reply(update, context, body)
@@ -218,7 +218,7 @@ async def newlink(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 context.application.bot_data["clone_id"], slug, url, title, update.effective_user.id)
             me = await context.bot.get_me()
             public_url = f"https://t.me/{me.username}?start={slug}"
-            body = f"Permanent bot link created · Entry ID: {entry['id']} · {title}:\\n{public_url}\\n\\nThe destination URL is stored unchanged and will not be auto-expired by this bot."
+            body = f"Permanent bot link created · Entry ID: {entry['id']} · {title}:\n{public_url}\n\nThe destination URL is stored unchanged and will not be auto-expired by this bot."
     await reply(update, context, body)
 
 
@@ -238,8 +238,8 @@ async def publiclinks(update: Update, context: ContextTypes.DEFAULT_TYPE):
             state = "active" if row["is_active"] else "disabled"
             target = f"channel {row['channel_id']}" if row["kind"] == "channel" else "saved external URL"
             public_url = f"https://t.me/{me.username}?start={row['slug']}"
-            lines.append(f"#{row['id']} · {row['title']} · {target} · {state}\\n{public_url}")
-        body = "**ᴘᴜʙʟɪᴄ ʙᴏᴛ ʟɪɴᴋs**\\n\\n" + "\\n".join(lines)
+            lines.append(f"#{row['id']} · {row['title']} · {target} · {state}\n{public_url}")
+        body = "**ᴘᴜʙʟɪᴄ ʙᴏᴛ ʟɪɴᴋs**\n\n" + "\n".join(lines)
     await reply(update, context, body)
 
 async def deletelink(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -515,8 +515,8 @@ async def joinrequests(update: Update, context: ContextTypes.DEFAULT_TYPE):
         """SELECT channel_id,user_id,requested_at FROM link_pending_join_requests
            WHERE clone_id=$1 AND status='pending' ORDER BY requested_at LIMIT 40""",
         context.application.bot_data["clone_id"])
-    body = "**ᴘᴇɴᴅɪɴɢ ᴊᴏɪɴ ʀᴇǫᴜᴇsᴛs**\\n\\n" + (
-        "\\n".join(f"Channel {row['channel_id']} · User {row['user_id']} · {row['requested_at']}" for row in rows)
+    body = "**ᴘᴇɴᴅɪɴɢ ᴊᴏɪɴ ʀᴇǫᴜᴇsᴛs**\n\n" + (
+        "\n".join(f"Channel {row['channel_id']} · User {row['user_id']} · {row['requested_at']}" for row in rows)
         if rows else "No pending requests.")
     await reply(update, context, body)
 
@@ -691,7 +691,7 @@ async def scheduled_link_worker(context: ContextTypes.DEFAULT_TYPE):
                 context, int(job["channel_id"]), int(job["user_id"]), bool(job["request_mode"]))
             await send_branded(
                 context.bot, int(job["user_id"]),
-                f"Your scheduled channel invitation is ready:\\n{url}\\nExpires: {expires.isoformat()}",
+                f"Your scheduled channel invitation is ready:\n{url}\nExpires: {expires.isoformat()}",
                 image_url=context.application.bot_data["image_url"],
                 image_path=context.application.bot_data["image_path"],
                 small_caps=context.application.bot_data["small_caps"])
@@ -710,8 +710,8 @@ async def scheduledlinks(update: Update, context: ContextTypes.DEFAULT_TYPE):
         """SELECT id,channel_id,scheduled_at,status,error_detail FROM link_scheduled_jobs
            WHERE clone_id=$1 ORDER BY id DESC LIMIT 30""",
         context.application.bot_data["clone_id"])
-    body = "**sᴄʜᴇᴅᴜʟᴇᴅ ɪɴᴠɪᴛᴀᴛɪᴏɴs**\\n\\n" + (
-        "\\n".join(f"#{row['id']} · {row['channel_id']} · {row['scheduled_at']} · {row['status']}" for row in rows)
+    body = "**sᴄʜᴇᴅᴜʟᴇᴅ ɪɴᴠɪᴛᴀᴛɪᴏɴs**\n\n" + (
+        "\n".join(f"#{row['id']} · {row['channel_id']} · {row['scheduled_at']} · {row['status']}" for row in rows)
         if rows else "No scheduled invitations.")
     await reply(update, context, body)
 
@@ -775,8 +775,8 @@ async def requeststats(update: Update, context: ContextTypes.DEFAULT_TYPE):
     rows = await context.application.bot_data["db"].require().fetch(
         """SELECT status,COUNT(*) AS total FROM link_pending_join_requests
            WHERE clone_id=$1 GROUP BY status ORDER BY status""", context.application.bot_data["clone_id"])
-    body = "**ᴊᴏɪɴ ʀᴇǫᴜᴇsᴛ ᴀɴᴀʟʏᴛɪᴄs**\\n\\n" + (
-        "\\n".join(f"{row['status']}: {row['total']}" for row in rows) if rows else "No request history.")
+    body = "**ᴊᴏɪɴ ʀᴇǫᴜᴇsᴛ ᴀɴᴀʟʏᴛɪᴄs**\n\n" + (
+        "\n".join(f"{row['status']}: {row['total']}" for row in rows) if rows else "No request history.")
     await reply(update, context, body)
 
 
@@ -785,8 +785,8 @@ async def requesthistory(update: Update, context: ContextTypes.DEFAULT_TYPE):
     rows = await context.application.bot_data["db"].require().fetch(
         """SELECT channel_id,user_id,status,requested_at,updated_at FROM link_pending_join_requests
            WHERE clone_id=$1 ORDER BY requested_at DESC LIMIT 30""", context.application.bot_data["clone_id"])
-    body = "**ᴊᴏɪɴ ʀᴇǫᴜᴇsᴛ ʜɪsᴛᴏʀʏ**\\n\\n" + (
-        "\\n".join(f"{r['status']} · channel {r['channel_id']} · user {r['user_id']} · {r['requested_at']}" for r in rows)
+    body = "**ᴊᴏɪɴ ʀᴇǫᴜᴇsᴛ ʜɪsᴛᴏʀʏ**\n\n" + (
+        "\n".join(f"{r['status']} · channel {r['channel_id']} · user {r['user_id']} · {r['requested_at']}" for r in rows)
         if rows else "No request history.")
     await reply(update, context, body)
 
@@ -800,7 +800,7 @@ async def linkstats(update: Update, context: ContextTypes.DEFAULT_TYPE):
            (SELECT COUNT(*) FROM link_channels WHERE clone_id=$1) AS channels""",
         context.application.bot_data["clone_id"])
     await reply(update, context,
-        f"**ʟɪɴᴋ ᴅᴀsʜʙᴏᴀʀᴅ**\\nChannels: {row['channels']}\\nPublic entries: {row['public_entries']}\\nTotal invites: {row['invites']}\\nCurrently unexpired invites: {row['unexpired_invites']}")
+        f"**ʟɪɴᴋ ᴅᴀsʜʙᴏᴀʀᴅ**\nChannels: {row['channels']}\nPublic entries: {row['public_entries']}\nTotal invites: {row['invites']}\nCurrently unexpired invites: {row['unexpired_invites']}")
 
 
 async def users(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -809,8 +809,8 @@ async def users(update: Update, context: ContextTypes.DEFAULT_TYPE):
     clone_id = context.application.bot_data["clone_id"]
     total = await db.fetchval("SELECT COUNT(*) FROM bot_users WHERE clone_id=$1", clone_id)
     rows = await db.fetch("SELECT user_id,is_banned,last_seen FROM bot_users WHERE clone_id=$1 ORDER BY last_seen DESC LIMIT 25", clone_id)
-    body = f"**ᴜsᴇʀ ᴅᴀsʜʙᴏᴀʀᴅ** · Total: {total}\\n\\n" + (
-        "\\n".join(f"{r['user_id']} · {'blocked' if r['is_banned'] else 'active'} · {r['last_seen']}" for r in rows)
+    body = f"**ᴜsᴇʀ ᴅᴀsʜʙᴏᴀʀᴅ** · Total: {total}\n\n" + (
+        "\n".join(f"{r['user_id']} · {'blocked' if r['is_banned'] else 'active'} · {r['last_seen']}" for r in rows)
         if rows else "No registered users.")
     await reply(update, context, body)
 
@@ -823,7 +823,7 @@ async def userinfo(update: Update, context: ContextTypes.DEFAULT_TYPE):
         row = await context.application.bot_data["db"].require().fetchrow(
             "SELECT user_id,first_seen,last_seen,is_banned FROM bot_users WHERE clone_id=$1 AND user_id=$2",
             context.application.bot_data["clone_id"], int(context.args[0]))
-        body = f"User: {row['user_id']}\\nFirst seen: {row['first_seen']}\\nLast seen: {row['last_seen']}\\nBlocked: {row['is_banned']}" if row else "User not found."
+        body = f"User: {row['user_id']}\nFirst seen: {row['first_seen']}\nLast seen: {row['last_seen']}\nBlocked: {row['is_banned']}" if row else "User not found."
     await reply(update, context, body)
 
 
@@ -860,7 +860,7 @@ async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
            (SELECT COUNT(*) FROM link_join_events WHERE clone_id=$1) AS join_events""",
         context.application.bot_data["clone_id"])
     await reply(update, context,
-        f"**sʏsᴛᴇᴍ sᴛᴀᴛs**\\nUsers: {row['users']}\\nChannels: {row['channels']}\\nPublic links: {row['public_links']}\\nJoin events: {row['join_events']}")
+        f"**sʏsᴛᴇᴍ sᴛᴀᴛs**\nUsers: {row['users']}\nChannels: {row['channels']}\nPublic links: {row['public_links']}\nJoin events: {row['join_events']}")
 
 
 async def logs(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -868,8 +868,8 @@ async def logs(update: Update, context: ContextTypes.DEFAULT_TYPE):
     rows = await context.application.bot_data["db"].require().fetch(
         """SELECT channel_id,user_id,event_status,created_at FROM link_join_events
            WHERE clone_id=$1 ORDER BY id DESC LIMIT 25""", context.application.bot_data["clone_id"])
-    body = "**ʀᴇᴄᴇɴᴛ ᴊᴏɪɴ ʟᴏɢs**\\n\\n" + (
-        "\\n".join(f"{r['event_status']} · channel {r['channel_id']} · user {r['user_id']} · {r['created_at']}" for r in rows)
+    body = "**ʀᴇᴄᴇɴᴛ ᴊᴏɪɴ ʟᴏɢs**\n\n" + (
+        "\n".join(f"{r['event_status']} · channel {r['channel_id']} · user {r['user_id']} · {r['created_at']}" for r in rows)
         if rows else "No join events.")
     await reply(update, context, body)
 
@@ -881,7 +881,7 @@ async def security(update: Update, context: ContextTypes.DEFAULT_TYPE):
     fsub_count = await context.application.bot_data["db"].require().fetchval(
         "SELECT COUNT(*) FROM link_fsub_channels WHERE clone_id=$1", context.application.bot_data["clone_id"])
     await reply(update, context,
-        f"**sᴇᴄᴜʀɪᴛʏ ᴄʜᴇᴄᴋ**\\nShortener encryption key configured: {encrypted_key}\\nAllowed shortener hosts: {', '.join(hosts) if hosts else 'none'}\\nFSub channels: {fsub_count}")
+        f"**sᴇᴄᴜʀɪᴛʏ ᴄʜᴇᴄᴋ**\nShortener encryption key configured: {encrypted_key}\nAllowed shortener hosts: {', '.join(hosts) if hosts else 'none'}\nFSub channels: {fsub_count}")
 
 
 async def database_status(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -900,7 +900,7 @@ async def diagnostics(update: Update, context: ContextTypes.DEFAULT_TYPE):
         me = await context.bot.get_me()
         db = await context.application.bot_data["db"].require().fetchval("SELECT 1")
         queue = "available" if context.job_queue else "unavailable"
-        body = f"Bot: @{me.username}\\nTelegram API: reachable\\nPostgreSQL: {'healthy' if db == 1 else 'unknown'}\\nJobQueue: {queue}"
+        body = f"Bot: @{me.username}\nTelegram API: reachable\nPostgreSQL: {'healthy' if db == 1 else 'unknown'}\nJobQueue: {queue}"
     except Exception as exc:
         body = f"Diagnostics failed: {type(exc).__name__}: {str(exc)[:120]}"
     await reply(update, context, body)
