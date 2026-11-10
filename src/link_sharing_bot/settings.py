@@ -1,11 +1,55 @@
-"""Shared settings and branded command registration."""
+"""Shared settings screens with functional About, Help, Channel and Back navigation."""
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import ContextTypes, CommandHandler
+from telegram.ext import ContextTypes, CommandHandler, CallbackQueryHandler
 from .branding import send_branded, keyboard_from_buttons
 
 
+def _default_markup(context, screen):
+    channel_url = context.application.bot_data.get("channel_url") or ""
+    channel = [InlineKeyboardButton("· ᴄʜᴀɴɴᴇʟ ·", url=channel_url)] if channel_url.startswith(("https://", "http://")) else []
+    if screen == "start":
+        rows = [
+            [InlineKeyboardButton("· ᴀʙᴏᴜᴛ ·", callback_data="nav:about")],
+            [InlineKeyboardButton("· ʜᴇʟᴘ ·", callback_data="nav:help")],
+        ]
+        if channel:
+            rows[0].append(channel[0])
+        return InlineKeyboardMarkup(rows)
+    rows = []
+    if channel:
+        rows.append(channel)
+    rows.append([InlineKeyboardButton("· ʙᴀᴄᴋ ·", callback_data="nav:start")])
+    return InlineKeyboardMarkup(rows)
+
+
+async def _show_screen(update: Update, context: ContextTypes.DEFAULT_TYPE, screen: str):
+    product = context.application.bot_data["product"]
+    key = f"{product}.{screen}"
+    defaults = context.application.bot_data["defaults"]
+    body = await context.application.bot_data["db"].get_text(
+        context.application.bot_data["clone_id"], key, defaults.get(key, "ᴡᴇʟᴄᴏᴍᴇ!")
+    )
+    saved = await context.application.bot_data["db"].get_buttons(
+        context.application.bot_data["clone_id"], key
+    )
+    markup = keyboard_from_buttons(saved, small_caps=context.application.bot_data["small_caps"]) if saved else None
+    if markup is None:
+        markup = _default_markup(context, screen)
+    elif screen in {"about", "help"}:
+        rows = list(markup.inline_keyboard)
+        rows.append([InlineKeyboardButton("· ʙᴀᴄᴋ ·", callback_data="nav:start")])
+        markup = InlineKeyboardMarkup(rows)
+    await send_branded(
+        context.bot, update.effective_chat.id, body,
+        image_url=context.application.bot_data["image_url"],
+        image_path=context.application.bot_data["image_path"],
+        small_caps=context.application.bot_data["small_caps"],
+        reply_markup=markup,
+    )
+
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    key = "file.start" if context.application.bot_data["product"] == "file" else "link.start"
+    product = context.application.bot_data["product"]
     user_row = await context.application.bot_data["db"].require().fetchrow(
         """INSERT INTO bot_users(clone_id,user_id) VALUES($1,$2)
            ON CONFLICT(clone_id,user_id) DO UPDATE SET last_seen=NOW()
@@ -13,64 +57,46 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.application.bot_data["clone_id"], update.effective_user.id,
     )
     if user_row and user_row["is_banned"]:
-        await send_branded(context.bot, update.effective_chat.id, "ᴛʜɪs ʙᴏᴛ ᴀᴄᴄᴇss ɪs ᴅɪsᴀʙʟᴇᴅ ғᴏʀ ʏᴏᴜ. ᴄᴏɴᴛᴀᴄᴛ ᴛʜᴇ ᴀᴅᴍɪɴ.",
+        await send_branded(
+            context.bot, update.effective_chat.id, "ᴀᴄᴄᴇss ᴛᴏ ᴛʜɪs ʙᴏᴛ ɪs ᴅɪsᴀʙʟᴇᴅ. ᴄᴏɴᴛᴀᴄᴛ ᴛʜᴇ ᴀᴅᴍɪɴ.",
             image_url=context.application.bot_data["image_url"],
             image_path=context.application.bot_data["image_path"],
-            small_caps=context.application.bot_data["small_caps"])
+            small_caps=context.application.bot_data["small_caps"],
+        )
         return
-
-    # A public bot deep link is permanent. Only the fresh channel invite
-    # generated after this /start receives the configured Telegram expiry.
-    if context.application.bot_data["product"] == "link" and context.args:
+    if product == "link" and context.args:
         from .handlers.links import open_public_entry
         if await open_public_entry(update, context, context.args[0]):
             return
-
-    body = await context.application.bot_data["db"].get_text(
-        context.application.bot_data["clone_id"], key,
-        context.application.bot_data["defaults"].get(key, "ᴡᴇʟᴄᴏᴍᴇ!"),
-    )
-    rows = await context.application.bot_data["db"].get_buttons(context.application.bot_data["clone_id"], key)
-    markup = keyboard_from_buttons(rows, small_caps=context.application.bot_data["small_caps"])
-    await send_branded(context.bot, update.effective_chat.id, body,
-                       image_url=context.application.bot_data["image_url"],
-                       image_path=context.application.bot_data["image_path"],
-                       small_caps=context.application.bot_data["small_caps"], reply_markup=markup)
+    await _show_screen(update, context, "start")
 
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    key = "file.help" if context.application.bot_data["product"] == "file" else "link.help"
-    body = await context.application.bot_data["db"].get_text(
-        context.application.bot_data["clone_id"], key,
-        context.application.bot_data["defaults"].get(key, "Use /start to begin and /texts to customise messages."),
-    )
-    rows = await context.application.bot_data["db"].get_buttons(context.application.bot_data["clone_id"], key)
-    markup = keyboard_from_buttons(rows, small_caps=context.application.bot_data["small_caps"])
-    await send_branded(context.bot, update.effective_chat.id, body,
-                       image_url=context.application.bot_data["image_url"],
-                       image_path=context.application.bot_data["image_path"],
-                       small_caps=context.application.bot_data["small_caps"], reply_markup=markup)
+    await _show_screen(update, context, "help")
 
 
 async def about(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    key = "file.about" if context.application.bot_data["product"] == "file" else "link.about"
-    body = await context.application.bot_data["db"].get_text(
-        context.application.bot_data["clone_id"], key,
-        context.application.bot_data["defaults"].get(key, "Official bot information."),
-    )
-    rows = await context.application.bot_data["db"].get_buttons(context.application.bot_data["clone_id"], key)
-    markup = keyboard_from_buttons(rows, small_caps=context.application.bot_data["small_caps"])
-    await send_branded(context.bot, update.effective_chat.id, body,
-                       image_url=context.application.bot_data["image_url"],
-                       image_path=context.application.bot_data["image_path"],
-                       small_caps=context.application.bot_data["small_caps"], reply_markup=markup)
+    await _show_screen(update, context, "about")
+
+
+async def navigation_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    if not query:
+        return
+    await query.answer()
+    screen = query.data.split(":", 1)[1]
+    if screen not in {"start", "about", "help"}:
+        return
+    await _show_screen(update, context, screen)
 
 
 async def ping(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await send_branded(context.bot, update.effective_chat.id, "ᴘᴏɴɢ · ʙᴏᴛ ɪs ʀᴇsᴘᴏɴᴅɪɴɢ.",
-                       image_url=context.application.bot_data["image_url"],
-                       image_path=context.application.bot_data["image_path"],
-                       small_caps=context.application.bot_data["small_caps"])
+    await send_branded(
+        context.bot, update.effective_chat.id, "ᴘᴏɴɢ · ʙᴏᴛ ɪs ʀᴇsᴘᴏɴᴅɪɴɢ.",
+        image_url=context.application.bot_data["image_url"],
+        image_path=context.application.bot_data["image_path"],
+        small_caps=context.application.bot_data["small_caps"],
+    )
 
 
 async def settings(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -78,10 +104,12 @@ async def settings(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "/texts — edit messages\\n/buttons TEMPLATE_KEY — manage inline buttons\\n"
             "/dlt_time SECONDS — set delivery auto-delete (File Sharing)\\n"
             "/help — command guide")
-    await send_branded(context.bot, update.effective_chat.id, body,
-                       image_url=context.application.bot_data["image_url"],
-                       image_path=context.application.bot_data["image_path"],
-                       small_caps=context.application.bot_data["small_caps"])
+    await send_branded(
+        context.bot, update.effective_chat.id, body,
+        image_url=context.application.bot_data["image_url"],
+        image_path=context.application.bot_data["image_path"],
+        small_caps=context.application.bot_data["small_caps"],
+    )
 
 
 def add_common_handlers(app):
@@ -90,3 +118,4 @@ def add_common_handlers(app):
     app.add_handler(CommandHandler("about", about))
     app.add_handler(CommandHandler("ping", ping))
     app.add_handler(CommandHandler("settings", settings))
+    app.add_handler(CallbackQueryHandler(navigation_callback, pattern=r"^nav:(start|about|help)$"))
