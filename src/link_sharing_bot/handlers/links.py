@@ -149,7 +149,7 @@ async def deletelink(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def setttl(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not is_admin(update, context): return
-    if len(context.args) != 2 or not all(x.isdigit() for x in context.args):
+    if len(context.args) != 2 or not all(x.lstrip("-").isdigit() for x in context.args):
         body = "Usage: /setttl CHANNEL_ID SECONDS (60–604800). Applies to future invitations only."
     else:
         cid, ttl = map(int, context.args)
