@@ -33,6 +33,10 @@ python -m link_sharing_bot.main
 | `/genlink CHANNEL_ID [request] [TTL_SECONDS]` | Generate invite link |
 | `/bulklink ID1 ID2 ...` | Generate up to 20 links |
 | `/links` | List recent tracked invitation links |
+| `/linkhistory [CHANNEL_ID]` | View tracked channel invitation history |
+| `/revokelink INVITE_ID` | Revoke one tracked Telegram invite |
+| `/renewlink INVITE_ID`, `/bulkrenew INVITE_ID ...` | Create replacement invites without changing old records |
+| `/shortenerhistory` | View shortener request history |
 | `/revoke_links CHANNEL_ID` | Revoke tracked active links in a channel |
 | `/bulkexpire CHANNEL_ID TTL_SECONDS` | Change default TTL for future links |
 | `/setapproval CHANNEL_ID auto|manual DELAY_SECONDS` | Set channel approval policy |
