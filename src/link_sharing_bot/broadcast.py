@@ -170,7 +170,15 @@ async def capture_broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):
             [InlineKeyboardButton("· sᴄʜᴇᴅᴜʟᴇ ·", callback_data=f"bcast:schedule:{job_id}")],
             [InlineKeyboardButton("· ᴄᴀɴᴄᴇʟ ·", callback_data=f"bcast:cancel:{job_id}")],
         ])
-        await _send(context, update.effective_chat.id, f"Broadcast draft #{job_id} is ready. Choose delivery.", markup)
+        preview = payload.get("text") or payload.get("caption") or f"[{payload.get('media_type', 'media')} attachment]"
+        if len(preview) > 700:
+            preview = preview[:697] + "..."
+        button_labels = [item["text"] for row in payload.get("buttons", []) for item in row]
+        preview_body = f"Broadcast draft #{job_id}\n\nPreview:\n{preview}"
+        if button_labels:
+            preview_body += "\n\nURL buttons: " + ", ".join(button_labels)
+        preview_body += "\n\nChoose delivery."
+        await _send(context, update.effective_chat.id, preview_body, markup)
     except Exception as exc:
         await _send(context, update.effective_chat.id, f"Broadcast draft failed: {str(exc)[:160]}")
     raise ApplicationHandlerStop
