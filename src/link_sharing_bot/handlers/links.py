@@ -125,11 +125,13 @@ async def publiclinks(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not rows:
         body = "No public bot-link entries have been created."
     else:
+        me = await context.bot.get_me()
         lines = []
         for row in rows:
             state = "active" if row["is_active"] else "disabled"
             target = f"channel {row['channel_id']}" if row["kind"] == "channel" else "saved external URL"
-            lines.append(f"#{row['id']} · {row['title']} · {target} · {state}")
+            public_url = f"https://t.me/{me.username}?start={row['slug']}"
+            lines.append(f"#{row['id']} · {row['title']} · {target} · {state}\\n{public_url}")
         body = "**ᴘᴜʙʟɪᴄ ʙᴏᴛ ʟɪɴᴋs**\\n\\n" + "\\n".join(lines)
     await reply(update, context, body)
 
