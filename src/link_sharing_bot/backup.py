@@ -98,6 +98,8 @@ async def setbackupchannel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     channel_id = int(context.args[0])
     try:
         chat = await context.bot.get_chat(channel_id)
+        if getattr(chat, "type", "") != "channel" or getattr(chat, "username", None):
+            raise ValueError("Use a private Telegram channel without a public username for backups.")
         me = await context.bot.get_me()
         member = await context.bot.get_chat_member(channel_id, me.id)
         if getattr(member, "status", "") not in {"administrator", "creator"}:
@@ -138,6 +140,9 @@ async def _send_export(context, chat_id: int, *, register: bool, actor_id: int):
 
 async def backup(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not _is_admin(update, context): return
+    if not await _get_backup_channel(context) and update.effective_chat.type != "private":
+        await _send(context, update.effective_chat.id, "Configure a private backup channel with /setbackupchannel before creating backups from group chats.")
+        return
     try:
         filename, destination = await _send_export(
             context, update.effective_chat.id, register=True, actor_id=update.effective_user.id)
@@ -148,6 +153,9 @@ async def backup(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def exportdata(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not _is_admin(update, context): return
+    if update.effective_chat.type != "private":
+        await _send(context, update.effective_chat.id, "For data privacy, run /exportdata in this bot's private chat.")
+        return
     try:
         filename, _ = await _send_export(
             context, update.effective_chat.id, register=False, actor_id=update.effective_user.id)
