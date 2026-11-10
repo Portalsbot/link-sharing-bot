@@ -628,6 +628,31 @@ async def scheduled_link_worker(context: ContextTypes.DEFAULT_TYPE):
                 """UPDATE link_scheduled_jobs SET status='failed',error_detail=$1,finished_at=NOW()
                    WHERE id=$2""", f"{type(exc).__name__}: {str(exc)[:300]}", job["id"])
 
+async def scheduledlinks(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_admin(update, context): return
+    rows = await context.application.bot_data["db"].require().fetch(
+        """SELECT id,channel_id,scheduled_at,status,error_detail FROM link_scheduled_jobs
+           WHERE clone_id=$1 ORDER BY id DESC LIMIT 30""",
+        context.application.bot_data["clone_id"])
+    body = "**sᴄʜᴇᴅᴜʟᴇᴅ ɪɴᴠɪᴛᴀᴛɪᴏɴs**\\n\\n" + (
+        "\\n".join(f"#{row['id']} · {row['channel_id']} · {row['scheduled_at']} · {row['status']}" for row in rows)
+        if rows else "No scheduled invitations.")
+    await reply(update, context, body)
+
+
+async def cancelschedule(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_admin(update, context): return
+    if len(context.args) != 1 or not context.args[0].isdigit():
+        body = "Usage: /cancelschedule JOB_ID"
+    else:
+        result = await context.application.bot_data["db"].require().execute(
+            """UPDATE link_scheduled_jobs SET status='cancelled',finished_at=NOW()
+               WHERE clone_id=$1 AND id=$2 AND status='pending'""",
+            context.application.bot_data["clone_id"], int(context.args[0]))
+        body = "Scheduled invitation cancelled." if result.endswith("1") else "Pending job not found; it may already be processing or finished."
+    await reply(update, context, body)
+
+
 async def channelpanel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await channels(update,context)
 
@@ -641,6 +666,6 @@ def add_link_handlers(app):
     app.add_handler(CommandHandler("setapproval",setapproval)); app.add_handler(CommandHandler("reqmode",reqmode)); app.add_handler(CommandHandler("reqtime",reqtime))
     app.add_handler(CommandHandler("add_fsub",add_fsub)); app.add_handler(CommandHandler("del_fsub",del_fsub)); app.add_handler(CommandHandler("fsub",fsub))
     app.add_handler(CommandHandler("shorten",shorten)); app.add_handler(CommandHandler("set_api",set_api)); app.add_handler(CommandHandler("shortnerstatus",shortnerstatus)); app.add_handler(CommandHandler("shortnerstats",shortnerstats)); app.add_handler(CommandHandler("linkhistory",linkhistory))
-    app.add_handler(CommandHandler("channelstats",channelstats)); app.add_handler(CommandHandler("schedulelink",schedulelink))
+    app.add_handler(CommandHandler("channelstats",channelstats)); app.add_handler(CommandHandler("schedulelink",schedulelink)); app.add_handler(CommandHandler("scheduledlinks",scheduledlinks)); app.add_handler(CommandHandler("cancelschedule",cancelschedule))
     app.add_handler(CallbackQueryHandler(check_fsub_callback, pattern=r"^fsub:check:"))
     app.add_handler(ChatJoinRequestHandler(handle_join_request))
