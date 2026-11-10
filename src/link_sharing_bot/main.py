@@ -10,6 +10,7 @@ from .message_editor.handlers import add_editor_handlers
 from .handlers.links import add_link_handlers
 from .errors import error_handler
 from .branding import close_branded_message
+from .backup import add_backup_handlers
 
 async def post_init(app):
     s=app.bot_data["settings"]
@@ -44,7 +45,7 @@ def main():
         "image_url":settings.branding_image_url,"image_path":settings.branding_image_path,"small_caps":settings.small_caps,"channel_url":os.getenv("CHANNEL_URL","").strip(),
         "defaults":DEFAULT_MESSAGES,"product":"link"})
     app.add_handler(CallbackQueryHandler(close_branded_message, pattern=r"^branding:close$"), group=-1)
-    add_common_handlers(app); add_editor_handlers(app); add_link_handlers(app); app.add_error_handler(error_handler)
+    add_common_handlers(app); add_editor_handlers(app); add_link_handlers(app); add_backup_handlers(app); app.add_error_handler(error_handler)
     app.run_polling(allowed_updates=["message","callback_query","chat_join_request"])
 
 if __name__=="__main__": main()
