@@ -97,3 +97,7 @@ Provider-specific shortener response formats may require an adapter. The generic
 - `/joinrequests`, `/approve USER_ID CHANNEL_ID` and `/decline USER_ID CHANNEL_ID` provide manual join-request handling. Configure automatic handling with `/setapproval`.
 - `/schedulelink CHANNEL_ID YYYY-MM-DDTHH:MM:SS+05:30` stores a durable PostgreSQL job. Use `/scheduledlinks` and `/cancelschedule JOB_ID` to manage pending jobs.
 - Shortener configuration is intentionally locked down: set `SHORTENER_ALLOWED_HOSTS` to the exact provider hostname and `SHORTENER_ENCRYPTION_KEY` to a Fernet key before using `/set_api`. API credentials are encrypted before storage. Existing plaintext shortener records from older versions will not be accepted; reconfigure them after setting the key.
+
+## Web-service health check
+
+When deploying as a web service, the platform-provided `PORT` variable starts a lightweight HTTP server. Configure the platform health-check path as `/health`. This endpoint reports process liveness; use `/diagnostics` in Telegram to verify Telegram API, PostgreSQL and JobQueue connectivity.
