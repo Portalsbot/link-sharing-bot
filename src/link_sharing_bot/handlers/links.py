@@ -68,7 +68,7 @@ async def addch(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 body = "The bot is not an administrator with can_invite_users permission in that channel."
             else:
                 await context.application.bot_data["db"].require().execute(
-                    "INSERT INTO link_channels(clone_id,channel_id,title) VALUES($1,$2,$3) ON CONFLICT(clone_id,channel_id) DO UPDATE SET title=EXCLUDED.title",
+                    "INSERT INTO link_channels(clone_id,channel_id,title,approval_enabled) VALUES($1,$2,$3,FALSE) ON CONFLICT(clone_id,channel_id) DO UPDATE SET title=EXCLUDED.title",
                     context.application.bot_data["clone_id"], channel_id, chat.title or str(channel_id))
                 slug = _public_slug(channel_id)
                 await context.application.bot_data["db"].require().execute(
