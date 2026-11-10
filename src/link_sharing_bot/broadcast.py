@@ -44,15 +44,37 @@ def _payload(message, small_caps=True):
                     safe_row.append({"text": button.text, "url": button.url})
             if safe_row:
                 buttons.append(safe_row)
+    def extract_buttons(value):
+        kept = []
+        parsed = []
+        for line in (value or "").splitlines():
+            marker = line.strip()
+            if marker.lower().startswith("[button]"):
+                spec = marker[len("[button]"):].strip()
+                if "|" not in spec:
+                    raise ValueError("Button syntax: [button] LABEL | https://URL")
+                label, url = [part.strip() for part in spec.split("|", 1)]
+                if not label or len(label) > 64 or not url.startswith(("https://", "http://")):
+                    raise ValueError("Broadcast buttons need a label (max 64 characters) and an HTTP(S) URL.")
+                parsed.append({"text": label, "url": url})
+            else:
+                kept.append(line)
+        if parsed:
+            buttons.extend([[item] for item in parsed])
+        return "\n".join(kept).strip()
     if message.text:
-        return {"kind": "text", "text": message.text, "buttons": buttons}
+        text = extract_buttons(message.text)
+        if not text:
+            raise ValueError("Broadcast text cannot be empty after removing button definitions.")
+        return {"kind": "text", "text": text, "buttons": buttons}
     for media_type, (method, argument) in MEDIA_METHODS.items():
         media = getattr(message, media_type, None)
         if media:
             if media_type == "photo":
                 media = media[-1]
+            caption = extract_buttons(message.caption or "")
             return {"kind": "media", "media_type": media_type, "file_id": media.file_id,
-                    "caption": message.caption or "", "buttons": buttons}
+                    "caption": caption, "buttons": buttons}
     raise ValueError("Send text, photo, video, document, audio or animation.")
 
 
