@@ -203,8 +203,11 @@ async def restore(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def importdata(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not _is_owner(update, context): return
+    if len(context.args) != 1 or context.args[0].upper() != "CONFIRM":
+        await _send(context, update.effective_chat.id, "Usage: /importdata CONFIRM\nThis replaces the matching clone's records with the uploaded JSON backup.")
+        return
     context.user_data["awaiting_backup_import"] = True
-    await _send(context, update.effective_chat.id, "Send the JSON backup document. It must belong to this exact bot product and clone. Existing records will be replaced.")
+    await _send(context, update.effective_chat.id, "Import confirmed. Send the JSON backup document. It must belong to this exact bot product and clone.")
 
 
 async def import_document(update: Update, context: ContextTypes.DEFAULT_TYPE):
