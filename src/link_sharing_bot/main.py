@@ -14,6 +14,7 @@ from .errors import error_handler
 from .branding import close_branded_message
 from .backup import add_backup_handlers
 from .broadcast import add_broadcast_handlers
+from .fsubs import add_fsubs_handlers, message_fsubs_gate, callback_fsubs_gate
 
 async def post_init(app):
     s=app.bot_data["settings"]
@@ -87,8 +88,10 @@ def main():
     app.bot_data.update({"settings":settings,"owner_id":settings.owner_id,"admins":admins,"clone_id":settings.clone_id,
         "image_url":settings.branding_image_url,"image_path":settings.branding_image_path,"small_caps":settings.small_caps,"channel_url":os.getenv("CHANNEL_URL","").strip(),
         "defaults":DEFAULT_MESSAGES,"product":"link"})
+    app.add_handler(MessageHandler(filters.ALL, message_fsubs_gate), group=-10)
+    app.add_handler(CallbackQueryHandler(callback_fsubs_gate), group=-2)
     app.add_handler(CallbackQueryHandler(close_branded_message, pattern=r"^branding:close$"), group=-1)
-    add_common_handlers(app); add_editor_handlers(app); add_link_handlers(app); add_backup_handlers(app); add_broadcast_handlers(app); app.add_error_handler(error_handler)
+    add_common_handlers(app); add_editor_handlers(app); add_link_handlers(app); add_backup_handlers(app); add_broadcast_handlers(app); add_fsubs_handlers(app); app.add_error_handler(error_handler)
     app.bot_data["health_server"] = _start_health_server()
     app.run_polling(allowed_updates=["message","callback_query","chat_join_request"])
 
