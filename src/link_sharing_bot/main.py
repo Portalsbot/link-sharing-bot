@@ -14,7 +14,12 @@ from .branding import close_branded_message
 async def post_init(app):
     s=app.bot_data["settings"]
     db=Database(s.database_url); await db.connect()
-    await db.init_schema(Path("migrations/001_initial.sql").read_text(encoding="utf-8"))
+    migrations_dir = Path(__file__).resolve().parents[2] / "migrations"
+    migration_files = sorted(migrations_dir.glob("*.sql"))
+    if not migration_files:
+        raise RuntimeError(f"No database migrations found in {migrations_dir}")
+    for migration_file in migration_files:
+        await db.init_schema(migration_file.read_text(encoding="utf-8"))
     app.bot_data["db"]=db
 
 async def post_shutdown(app):
