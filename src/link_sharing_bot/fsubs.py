@@ -132,15 +132,28 @@ async def fsubs_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await _send(context, update.effective_chat.id, body, _panel_markup())
 
 
-async def _show_remove_list(context, chat_id: int):
+async def _show_remove_list(context, chat_id: int, offset: int = 0):
     rows = await _fetch_channels(context)
+    page_size = 40
+    offset = max(0, min(offset, max(0, ((len(rows) - 1) // page_size) * page_size)))
+    selected = rows[offset:offset + page_size]
     keyboard = [
-        [InlineKeyboardButton(f"· {str(row['title'])[:25]} · {int(row['channel_id'])}", callback_data=f"fsubs:del:{int(row['channel_id'])}")]
-        for row in rows[:50]
+        [InlineKeyboardButton(
+            f"· {str(row['title'])[:25]} · {int(row['channel_id'])}",
+            callback_data=f"fsubs:del:{int(row['channel_id'])}")]
+        for row in selected
     ]
+    navigation = []
+    if offset:
+        navigation.append(InlineKeyboardButton("· ᴘʀᴇᴠ ·", callback_data=f"fsubs:remove_page:{max(0, offset - page_size)}"))
+    if offset + page_size < len(rows):
+        navigation.append(InlineKeyboardButton("· ɴᴇxᴛ ·", callback_data=f"fsubs:remove_page:{offset + page_size}"))
+    if navigation:
+        keyboard.append(navigation)
     keyboard.append([InlineKeyboardButton("· ʙᴀᴄᴋ ·", callback_data="fsubs:panel"),
                      InlineKeyboardButton("· ᴄʟᴏsᴇ ·", callback_data="fsubs:close")])
-    body = "Select an active FSub channel to remove:" if rows else "No FSub channels are currently active."
+    body = (f"Select an active FSub channel to remove · {offset + 1}–{min(offset + page_size, len(rows))} of {len(rows)}:"
+            if rows else "No FSub channels are currently active.")
     await _send(context, chat_id, body, InlineKeyboardMarkup(keyboard))
 
 
@@ -186,6 +199,12 @@ async def fsubs_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "Send the numeric Telegram channel ID. The bot must be an administrator in that channel.")
     elif action == "fsubs:remove":
         await _show_remove_list(context, query.message.chat_id)
+    elif action.startswith("fsubs:remove_page:"):
+        try:
+            offset = int(action.rsplit(":", 1)[1])
+            await _show_remove_list(context, query.message.chat_id, offset)
+        except ValueError:
+            await _send(context, query.message.chat_id, "Invalid page selection.", _panel_markup())
     elif action == "fsubs:edit":
         context.user_data["fsubs_input_action"] = "edit"
         current = await _get_message(context)
