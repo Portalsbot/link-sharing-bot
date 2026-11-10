@@ -1,5 +1,5 @@
 """Shared settings screens with functional About, Help, Channel and Back navigation."""
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import Update, BotCommand, BotCommandScopeChat, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes, CommandHandler, CallbackQueryHandler
 from .branding import send_branded, keyboard_from_buttons
 
@@ -119,3 +119,73 @@ def add_common_handlers(app):
     app.add_handler(CommandHandler("ping", ping))
     app.add_handler(CommandHandler("settings", settings))
     app.add_handler(CallbackQueryHandler(navigation_callback, pattern=r"^nav:(start|about|help)$"))
+
+
+async def configure_command_menu(app):
+    public_commands = [
+        BotCommand("start", "Open the welcome screen"),
+        BotCommand("about", "About this bot"),
+        BotCommand("help", "How to use this bot"),
+        BotCommand("ping", "Check bot response"),
+    ]
+    admin_commands = [
+        BotCommand("addch", "Register a target channel"),
+        BotCommand("newlink", "Create a permanent external bot link"),
+        BotCommand("publiclinks", "List public bot links"),
+        BotCommand("deletelink", "Disable a public bot link"),
+        BotCommand("setttl", "Set expiry for future channel invites"),
+        BotCommand("delch", "Remove a registered channel"),
+        BotCommand("channels", "List registered channels"),
+        BotCommand("genlink", "Create a temporary invite"),
+        BotCommand("bulklink", "Create invites for multiple channels"),
+        BotCommand("links", "View generated invitations"),
+        BotCommand("revoke_links", "Revoke channel invitations"),
+        BotCommand("bulkexpire", "Set future invite expiry"),
+        BotCommand("setapproval", "Configure join-request approval"),
+        BotCommand("reqmode", "Toggle automatic request approval"),
+        BotCommand("reqtime", "Set request approval delay"),
+        BotCommand("add_fsub", "Add a force-subscription channel"),
+        BotCommand("del_fsub", "Remove a force-subscription channel"),
+        BotCommand("fsub", "List force-subscription channels"),
+        BotCommand("shorten", "Shorten a URL"),
+        BotCommand("set_api", "Configure shortener API"),
+        BotCommand("shortnerstatus", "Check shortener configuration"),
+        BotCommand("shortnerstats", "View shortener usage"),
+        BotCommand("linkhistory", "View shortener history"),
+        BotCommand("channelstats", "View channel statistics"),
+        BotCommand("schedulelink", "Schedule a channel invitation"),
+        BotCommand("scheduledlinks", "List scheduled invitations"),
+        BotCommand("cancelschedule", "Cancel a scheduled invitation"),
+        BotCommand("joinrequests", "View pending join requests"),
+        BotCommand("approve", "Approve a join request"),
+        BotCommand("decline", "Decline a join request"),
+        BotCommand("apiusage", "View shortener API usage"),
+        BotCommand("requeststats", "View join-request analytics"),
+        BotCommand("requesthistory", "View join-request history"),
+        BotCommand("linkstats", "View link dashboard"),
+        BotCommand("users", "View registered users"),
+        BotCommand("userinfo", "View user details"),
+        BotCommand("blockuser", "Block a user"),
+        BotCommand("unblockuser", "Unblock a user"),
+        BotCommand("stats", "View bot statistics"),
+        BotCommand("logs", "View activity logs"),
+        BotCommand("security", "View security configuration"),
+        BotCommand("database", "Check database connection"),
+        BotCommand("diagnostics", "Run bot diagnostics"),
+        BotCommand("broadcast", "Create a broadcast"),
+        BotCommand("broadcasts", "View broadcasts"),
+        BotCommand("cancelbroadcast", "Cancel a pending broadcast"),
+        BotCommand("setbackupchannel", "Set backup channel"),
+        BotCommand("backup", "Create a database backup"),
+        BotCommand("backups", "List backups"),
+        BotCommand("restore", "Restore a backup"),
+        BotCommand("exportdata", "Export bot data"),
+        BotCommand("importdata", "Import a backup file"),
+        BotCommand("texts", "Edit bot messages"),
+        BotCommand("settings", "Open bot settings")
+    ]
+    await app.bot.set_my_commands(public_commands)
+    scope_ids = {app.bot_data["owner_id"], *app.bot_data.get("admins", set())}
+    for user_id in scope_ids:
+        await app.bot.set_my_commands(public_commands + admin_commands,
+            scope=BotCommandScopeChat(chat_id=user_id))
