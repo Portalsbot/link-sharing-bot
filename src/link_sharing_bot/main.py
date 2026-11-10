@@ -21,6 +21,10 @@ async def post_init(app):
     for migration_file in migration_files:
         await db.init_schema(migration_file.read_text(encoding="utf-8"))
     app.bot_data["db"]=db
+    if app.job_queue is None:
+        raise RuntimeError("PTB JobQueue is required for durable scheduled-link processing.")
+    from .handlers.links import scheduled_link_worker
+    app.job_queue.run_repeating(scheduled_link_worker, interval=5, first=2, name="durable-scheduled-links")
 
 async def post_shutdown(app):
     db=app.bot_data.get("db")
