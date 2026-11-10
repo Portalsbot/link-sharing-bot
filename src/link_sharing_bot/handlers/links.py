@@ -523,28 +523,69 @@ async def channelstats(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await reply(update,context,body)
 
 async def schedulelink(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not is_admin(update,context): return
-    if len(context.args)<2: body="Usage: `/schedulelink CHANNEL_ID YYYY-MM-DDTHH:MM[:SS] [request]`"
+    if not is_admin(update, context):
+        return
+    if len(context.args) < 2:
+        body = "Usage: /schedulelink CHANNEL_ID YYYY-MM-DDTHH:MM:SS+05:30 [request]"
     else:
         try:
-            cid=int(context.args[0]); when=datetime.fromisoformat(context.args[1])
-            if when.tzinfo is None: raise ValueError("Provide an ISO timestamp with timezone offset, e.g. +05:30")
-            delay=(when-datetime.now(when.tzinfo)).total_seconds()
-            if delay<=0 or delay>60*60*24*30: raise ValueError("Schedule must be in the next 30 days")
-            request_mode="request" in [x.lower() for x in context.args[2:]]
-            context.job_queue.run_once(_scheduled_link_job,when=delay,data={"channel_id":cid,"user_id":update.effective_user.id,"request":request_mode},name=f"invite-{context.application.bot_data['clone_id']}-{cid}-{int(when.timestamp())}")
-            body=f"Invite generation scheduled for {when.isoformat()}. This in-memory schedule is lost if the bot restarts; durable scheduling is still a production integration task."
-        except Exception as exc: body=f"Invalid schedule: {str(exc)[:150]}"
-    await reply(update,context,body)
+            channel_id = int(context.args[0])
+            when = datetime.fromisoformat(context.args[1])
+            if when.tzinfo is None:
+                raise ValueError("Include a timezone offset, for example +05:30.")
+            delay = (when - datetime.now(when.tzinfo)).total_seconds()
+            if delay <= 0 or delay > 30 * 86400:
+                raise ValueError("Choose a time within the next 30 days.")
+            exists = await context.application.bot_data["db"].require().fetchval(
+                "SELECT 1 FROM link_channels WHERE clone_id=$1 AND channel_id=$2",
+                context.application.bot_data["clone_id"], channel_id)
+            if not exists:
+                raise ValueError("Register the channel with /addch first.")
+            request_mode = "request" in [item.lower() for item in context.args[2:]]
+            row = await context.application.bot_data["db"].require().fetchrow(
+                """INSERT INTO link_scheduled_jobs
+                   (clone_id,channel_id,user_id,request_mode,scheduled_at)
+                   VALUES($1,$2,$3,$4,$5) RETURNING id""",
+                context.application.bot_data["clone_id"], channel_id,
+                update.effective_user.id, request_mode, when)
+            body = f"Scheduled invitation job #{row['id']} for {when.isoformat()}. It is stored in PostgreSQL and survives bot restarts."
+        except Exception as exc:
+            body = f"Could not schedule invitation: {str(exc)[:180]}"
+    await reply(update, context, body)
 
-async def _scheduled_link_job(context: ContextTypes.DEFAULT_TYPE):
-    data=context.job.data
-    try:
-        url,expires=await genlink_for_channel(context,data["channel_id"],data["user_id"],data["request"])
-        await send_branded(context.bot,data["user_id"],f"Scheduled invitation link:\n{url}",
-            image_url=context.application.bot_data["image_url"],image_path=context.application.bot_data["image_path"],
-            small_caps=context.application.bot_data["small_caps"])
-    except Exception as exc: log.warning("Scheduled invite failed: %s",type(exc).__name__)
+
+async def scheduled_link_worker(context: ContextTypes.DEFAULT_TYPE):
+    db = context.application.bot_data["db"]
+    clone_id = context.application.bot_data["clone_id"]
+    while True:
+        async with db.require().acquire() as conn:
+            async with conn.transaction():
+                job = await conn.fetchrow(
+                    """SELECT id,channel_id,user_id,request_mode FROM link_scheduled_jobs
+                       WHERE clone_id=$1 AND status='pending' AND scheduled_at<=NOW()
+                       ORDER BY scheduled_at,id FOR UPDATE SKIP LOCKED LIMIT 1""",
+                    clone_id)
+                if not job:
+                    return
+                await conn.execute(
+                    "UPDATE link_scheduled_jobs SET status='processing' WHERE id=$1", job["id"])
+        try:
+            url, expires = await genlink_for_channel(
+                context, int(job["channel_id"]), int(job["user_id"]), bool(job["request_mode"]))
+            await send_branded(
+                context.bot, int(job["user_id"]),
+                f"Your scheduled channel invitation is ready:\\n{url}\\nExpires: {expires.isoformat()}",
+                image_url=context.application.bot_data["image_url"],
+                image_path=context.application.bot_data["image_path"],
+                small_caps=context.application.bot_data["small_caps"])
+            await db.require().execute(
+                """UPDATE link_scheduled_jobs SET status='completed',invite_url=$1,finished_at=NOW()
+                   WHERE id=$2""", url, job["id"])
+        except Exception as exc:
+            log.exception("Scheduled invitation job %s failed", job["id"])
+            await db.require().execute(
+                """UPDATE link_scheduled_jobs SET status='failed',error_detail=$1,finished_at=NOW()
+                   WHERE id=$2""", f"{type(exc).__name__}: {str(exc)[:300]}", job["id"])
 
 async def channelpanel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await channels(update,context)
