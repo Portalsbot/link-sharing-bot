@@ -38,6 +38,8 @@ def _panel_markup():
 
 async def _send(context, chat_id: int, body: str, markup=None):
     data = context.application.bot_data
+    if markup is None:
+        markup = InlineKeyboardMarkup([_close_row()])
     return await send_branded(
         context.bot, chat_id, body,
         image_url=data.get("image_url"), image_path=data.get("image_path"),
@@ -68,7 +70,6 @@ async def _set_message(context, body: str):
 
 async def _missing_channels(context, user_id: int):
     missing = []
-    me = await context.bot.get_me()
     for row in await _fetch_channels(context):
         channel_id = int(row["channel_id"])
         try:
