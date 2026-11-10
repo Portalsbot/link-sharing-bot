@@ -23,6 +23,36 @@ async def reply(update, context, body, template_key: str | None = None):
         image_url=context.application.bot_data["image_url"], image_path=context.application.bot_data["image_path"],
         small_caps=context.application.bot_data["small_caps"], reply_markup=markup)
 
+
+
+def _public_slug(channel_id: int) -> str:
+    return f"ch{abs(int(channel_id))}"
+
+async def open_public_entry(update: Update, context, slug: str) -> bool:
+    db = context.application.bot_data["db"]
+    row = await db.require().fetchrow(
+        "SELECT id,kind,channel_id,target_url,title FROM link_public_entries WHERE clone_id=$1 AND slug=$2 AND is_active=TRUE",
+        context.application.bot_data["clone_id"], slug,
+    )
+    if not row:
+        return False
+    if row["kind"] == "channel":
+        try:
+            url, expires = await genlink_for_channel(context, int(row["channel_id"]), update.effective_user.id)
+            seconds = max(0, int((expires - datetime.now(timezone.utc)).total_seconds()))
+            body = f"Your invitation to {row['title']} is ready. This individual invite expires in approximately {seconds} seconds."
+            markup = keyboard_from_buttons([[{"text": "· ᴊᴏɪɴ ᴄʜᴀɴɴᴇʟ ·", "url": url}]], small_caps=True)
+        except Exception as exc:
+            body = f"An invitation could not be generated: {type(exc).__name__}. Please contact the channel administrator."
+            markup = None
+    else:
+        body = f"{row['title']}\\n\\nThis saved destination link does not have an automatic expiry. It remains available until its owner disables this entry or the destination itself becomes unavailable."
+        markup = keyboard_from_buttons([[{"text": "· ᴏᴘᴇɴ ʟɪɴᴋ ·", "url": row["target_url"]}]], small_caps=True)
+    await send_branded(context.bot, update.effective_chat.id, body,
+        image_url=context.application.bot_data["image_url"], image_path=context.application.bot_data["image_path"],
+        small_caps=context.application.bot_data["small_caps"], reply_markup=markup)
+    return True
+
 async def addch(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not is_admin(update, context): return
     if len(context.args) != 1:
@@ -40,9 +70,70 @@ async def addch(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await context.application.bot_data["db"].require().execute(
                     "INSERT INTO link_channels(clone_id,channel_id,title) VALUES($1,$2,$3) ON CONFLICT(clone_id,channel_id) DO UPDATE SET title=EXCLUDED.title",
                     context.application.bot_data["clone_id"], channel_id, chat.title or str(channel_id))
-                body = f"✅ Channel registered: {chat.title} (`{channel_id}`)."
+                slug = _public_slug(channel_id)
+                await context.application.bot_data["db"].require().execute(
+                    """INSERT INTO link_public_entries(clone_id,slug,kind,channel_id,title,created_by,is_active)
+                       VALUES($1,$2,'channel',$3,$4,$5,TRUE)
+                       ON CONFLICT(clone_id,slug) DO UPDATE SET channel_id=EXCLUDED.channel_id,
+                       title=EXCLUDED.title,is_active=TRUE""",
+                    context.application.bot_data["clone_id"], slug, channel_id, chat.title or str(channel_id), update.effective_user.id)
+                me = await context.bot.get_me()
+                public_url = f"https://t.me/{me.username}?start={slug}"
+                body = f"✅ Channel registered: {chat.title} (`{channel_id}`).\\n\\nPermanent public bot link (share this):\\n{public_url}\\n\\nEach /start through this link generates a fresh channel invite using this channel's configured TTL."
         except (ValueError, TypeError): body = "Channel ID must be numeric."
         except Exception as exc: body = f"Could not register channel: {type(exc).__name__}. Check bot membership and permissions."
+    await reply(update, context, body)
+
+
+
+async def newlink(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_admin(update, context): return
+    if not context.args:
+        body = "Usage: /newlink HTTPS_URL [optional label]"
+    else:
+        url = context.args[0].strip()
+        parsed = urlparse(url)
+        if parsed.scheme not in {"https", "http"} or not parsed.netloc or parsed.username or parsed.password:
+            body = "Please provide a valid public HTTP(S) URL."
+        else:
+            import secrets
+            slug = "url_" + secrets.token_urlsafe(9)
+            title = " ".join(context.args[1:]).strip() or "Saved link"
+            await context.application.bot_data["db"].require().execute(
+                """INSERT INTO link_public_entries(clone_id,slug,kind,target_url,title,created_by,is_active)
+                   VALUES($1,$2,'external',$3,$4,$5,TRUE)""",
+                context.application.bot_data["clone_id"], slug, url, title, update.effective_user.id)
+            me = await context.bot.get_me()
+            public_url = f"https://t.me/{me.username}?start={slug}"
+            body = f"Permanent bot link created for {title}:\\n{public_url}\\n\\nThe destination URL is stored unchanged and will not be auto-expired by this bot."
+    await reply(update, context, body)
+
+
+async def deletelink(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_admin(update, context): return
+    if len(context.args) != 1 or not context.args[0].isdigit():
+        body = "Usage: /deletelink ENTRY_ID"
+    else:
+        result = await context.application.bot_data["db"].require().execute(
+            """UPDATE link_public_entries SET is_active=FALSE WHERE clone_id=$1 AND id=$2 AND is_active=TRUE""",
+            context.application.bot_data["clone_id"], int(context.args[0]))
+        body = "Public bot-link entry disabled. Its original external URL was not modified." if result.endswith("1") else "Active entry not found."
+    await reply(update, context, body)
+
+
+async def setttl(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_admin(update, context): return
+    if len(context.args) != 2 or not all(x.isdigit() for x in context.args):
+        body = "Usage: /setttl CHANNEL_ID SECONDS (60–604800). Applies to future invitations only."
+    else:
+        cid, ttl = map(int, context.args)
+        if ttl < 60 or ttl > 604800:
+            body = "TTL must be between 60 and 604800 seconds."
+        else:
+            result = await context.application.bot_data["db"].require().execute(
+                "UPDATE link_channels SET default_ttl_seconds=$1 WHERE clone_id=$2 AND channel_id=$3",
+                ttl, context.application.bot_data["clone_id"], cid)
+            body = f"Future invitation TTL for channel {cid} set to {ttl} seconds. Existing invites are unchanged." if result.endswith("1") else "Channel not found."
     await reply(update, context, body)
 
 async def delch(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -345,6 +436,7 @@ async def channelpanel(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 def add_link_handlers(app):
     app.add_handler(CommandHandler("addch",addch)); app.add_handler(CommandHandler("addchat",addch))
+    app.add_handler(CommandHandler("newlink",newlink)); app.add_handler(CommandHandler("deletelink",deletelink)); app.add_handler(CommandHandler("setttl",setttl))
     app.add_handler(CommandHandler("delch",delch)); app.add_handler(CommandHandler("delchat",delch))
     app.add_handler(CommandHandler("channels",channels)); app.add_handler(CommandHandler("channelpanel",channelpanel))
     app.add_handler(CommandHandler("genlink",genlink)); app.add_handler(CommandHandler("bulklink",bulklink)); app.add_handler(CommandHandler("links",links))
