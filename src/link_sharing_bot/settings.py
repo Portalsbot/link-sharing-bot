@@ -100,9 +100,9 @@ async def ping(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def settings(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    body = ("**sᴇᴛᴛɪɴɢs**\\n\\n"
-            "/texts — edit messages\\n/buttons TEMPLATE_KEY — manage inline buttons\\n"
-            "/dlt_time SECONDS — set delivery auto-delete (File Sharing)\\n"
+    body = ("**sᴇᴛᴛɪɴɢs**\n\n"
+            "/texts — edit messages\n/buttons TEMPLATE_KEY — manage inline buttons\n"
+            "/dlt_time SECONDS — set delivery auto-delete (File Sharing)\n"
             "/help — command guide")
     await send_branded(
         context.bot, update.effective_chat.id, body,
