@@ -135,7 +135,7 @@ async def backup(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         filename, destination = await _send_export(
             context, update.effective_chat.id, register=True, actor_id=update.effective_user.id)
-        await _send(context, update.effective_chat.id, f"Backup completed: {filename}\\nStored in {destination}.")
+        await _send(context, update.effective_chat.id, f"Backup completed: {filename}\nStored in {destination}.")
     except Exception as exc:
         await _send(context, update.effective_chat.id, f"Backup failed: {type(exc).__name__}: {str(exc)[:180]}")
 
@@ -156,8 +156,8 @@ async def backups(update: Update, context: ContextTypes.DEFAULT_TYPE):
         """SELECT id,file_name,created_at,backup_channel_id FROM bot_backups
            WHERE clone_id=$1 ORDER BY id DESC LIMIT 30""",
         context.application.bot_data["clone_id"])
-    body = "**ʙᴀᴄᴋᴜᴘ ʜɪsᴛᴏʀʏ**\\n\\n" + (
-        "\\n".join(f"#{row['id']} · {row['file_name']} · {row['created_at']} · {row['backup_channel_id'] or 'private'}" for row in rows)
+    body = "**ʙᴀᴄᴋᴜᴘ ʜɪsᴛᴏʀʏ**\n\n" + (
+        "\n".join(f"#{row['id']} · {row['file_name']} · {row['created_at']} · {row['backup_channel_id'] or 'private'}" for row in rows)
         if rows else "No registered backups.")
     await _send(context, update.effective_chat.id, body)
 
@@ -170,7 +170,7 @@ async def _import_bytes(context, raw):
 async def restore(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not _is_owner(update, context): return
     if len(context.args) != 2 or not context.args[0].isdigit() or context.args[1].upper() != "CONFIRM":
-        await _send(context, update.effective_chat.id, "Usage: /restore BACKUP_ID CONFIRM\\nThis replaces the matching clone's records with that backup.")
+        await _send(context, update.effective_chat.id, "Usage: /restore BACKUP_ID CONFIRM\nThis replaces the matching clone's records with that backup.")
         return
     row = await context.application.bot_data["db"].require().fetchrow(
         "SELECT telegram_file_id FROM bot_backups WHERE clone_id=$1 AND id=$2",
