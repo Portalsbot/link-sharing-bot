@@ -172,6 +172,7 @@ async def delch(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await reply(update, context, body)
 
 async def channels(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_admin(update, context): return
     rows = await context.application.bot_data["db"].require().fetch(
         "SELECT channel_id,title,default_ttl_seconds,approval_enabled FROM link_channels WHERE clone_id=$1 ORDER BY title LIMIT 80",
         context.application.bot_data["clone_id"])
@@ -225,6 +226,7 @@ async def bulklink(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await reply(update, context, body)
 
 async def links(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_admin(update, context): return
     rows = await context.application.bot_data["db"].require().fetch(
         "SELECT id,channel_id,invite_link,request_link,expire_at,revoked FROM link_invites WHERE clone_id=$1 ORDER BY id DESC LIMIT 30",
         context.application.bot_data["clone_id"])
@@ -301,6 +303,7 @@ async def del_fsub(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await reply(update, context, body)
 
 async def fsub(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_admin(update, context): return
     rows=await context.application.bot_data["db"].require().fetch(
         "SELECT channel_id,mode FROM link_fsub_channels WHERE clone_id=$1 ORDER BY channel_id",context.application.bot_data["clone_id"])
     body="**ғᴏʀᴄᴇ sᴜʙsᴄʀɪᴘᴛɪᴏɴ**\n\n"+("\n".join(f"`{r['channel_id']}` · {r['mode']}" for r in rows) if rows else "No FSub channels.")
@@ -329,27 +332,42 @@ async def reqtime(update: Update, context: ContextTypes.DEFAULT_TYPE):
             body=f"Global request delay set to {delay} seconds."
     await reply(update, context, body)
 
-async def handle_join_request(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    req=update.chat_join_request
-    row=await context.application.bot_data["db"].require().fetchrow(
-        "SELECT approval_enabled,approval_delay_seconds FROM link_channels WHERE clone_id=$1 AND channel_id=$2",
-        context.application.bot_data["clone_id"],req.chat.id)
-    if not row or not row["approval_enabled"]: return
-    setting=await context.application.bot_data["db"].require().fetchrow(
-        "SELECT setting_value FROM link_settings WHERE clone_id=$1 AND setting_key='reqmode'",context.application.bot_data["clone_id"])
-    if setting and setting["setting_value"]=="off": return
-    delay=int(row["approval_delay_seconds"])
-    if delay: await asyncio.sleep(delay)
+async def _approve_join_request(context, data):
+    db = context.application.bot_data["db"]
     try:
-        await context.bot.approve_chat_join_request(req.chat.id,req.from_user.id)
-        await context.application.bot_data["db"].require().execute(
-            "INSERT INTO link_join_events(clone_id,channel_id,user_id,event_status) VALUES($1,$2,$3,'approved')",
-            context.application.bot_data["clone_id"],req.chat.id,req.from_user.id)
+        await context.bot.approve_chat_join_request(data["channel_id"], data["user_id"])
+        status = "approved"
     except Exception as exc:
-        log.warning("Join request approval failed: %s",type(exc).__name__)
-        await context.application.bot_data["db"].require().execute(
-            "INSERT INTO link_join_events(clone_id,channel_id,user_id,event_status) VALUES($1,$2,$3,'failed')",
-            context.application.bot_data["clone_id"],req.chat.id,req.from_user.id)
+        log.warning("Join request approval failed: %s", type(exc).__name__)
+        status = "failed"
+    await db.require().execute(
+        "INSERT INTO link_join_events(clone_id,channel_id,user_id,event_status) VALUES($1,$2,$3,$4)",
+        data["clone_id"], data["channel_id"], data["user_id"], status)
+
+
+async def _approve_join_request_job(context: ContextTypes.DEFAULT_TYPE):
+    await _approve_join_request(context, context.job.data)
+
+
+async def handle_join_request(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    req = update.chat_join_request
+    clone_id = context.application.bot_data["clone_id"]
+    row = await context.application.bot_data["db"].require().fetchrow(
+        "SELECT approval_enabled,approval_delay_seconds FROM link_channels WHERE clone_id=$1 AND channel_id=$2",
+        clone_id, req.chat.id)
+    if not row or not row["approval_enabled"]:
+        return
+    setting = await context.application.bot_data["db"].require().fetchrow(
+        "SELECT setting_value FROM link_settings WHERE clone_id=$1 AND setting_key='reqmode'", clone_id)
+    if setting and setting["setting_value"] == "off":
+        return
+    data = {"clone_id": clone_id, "channel_id": req.chat.id, "user_id": req.from_user.id}
+    delay = int(row["approval_delay_seconds"])
+    if delay:
+        context.job_queue.run_once(_approve_join_request_job, when=delay, data=data,
+                                   name=f"approve-{clone_id}-{req.chat.id}-{req.from_user.id}")
+    else:
+        await _approve_join_request(context, data)
 
 async def shorten(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not context.args:
@@ -403,6 +421,7 @@ async def set_api(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await reply(update, context, body)
 
 async def shortnerstatus(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_admin(update, context): return
     row=await context.application.bot_data["db"].require().fetchrow(
         "SELECT setting_value FROM link_settings WHERE clone_id=$1 AND setting_key='shortener_config'",context.application.bot_data["clone_id"])
     body="Shortener configured." if row else "Shortener is not configured."
@@ -415,6 +434,7 @@ async def shortnerstats(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await reply(update, context,f"**sʜᴏʀᴛᴇɴᴇʀ sᴛᴀᴛs**\nTotal: {row['total']}\nSuccessful: {row['successful']}\nFailed: {row['failed']}")
 
 async def linkhistory(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_admin(update, context): return
     rows=await context.application.bot_data["db"].require().fetch(
         "SELECT original_url,shortened_url,status,created_at FROM link_shortener_events WHERE clone_id=$1 ORDER BY id DESC LIMIT 15",context.application.bot_data["clone_id"])
     body="**ʟɪɴᴋ ʜɪsᴛᴏʀʏ**\n\n"+("\n".join(f"{r['status']} · {r['original_url'][:90]}" for r in rows) if rows else "No history.")
