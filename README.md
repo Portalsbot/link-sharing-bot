@@ -107,3 +107,7 @@ Provider-specific shortener response formats may require an adapter. The generic
 When deploying as a web service, the platform-provided `PORT` variable starts a lightweight HTTP server. Configure the platform health-check path as `/health`. This endpoint reports process liveness; use `/diagnostics` in Telegram to verify Telegram API, PostgreSQL and JobQueue connectivity.
 
 Broadcast text or media captions can include URL buttons with one line per button: `[button] LABEL | https://URL`. The bot shows a preview before immediate or scheduled delivery.
+
+## Force-subscription management
+
+Use `/fsubs` as Owner/Admin. The panel provides **Add**, **Remove**, **Edit Message**, **Back** and **Close**. Add accepts a numeric Telegram channel ID and verifies bot-admin permissions. Remove displays active FSub channels as individual buttons. Edit changes the user-facing message displayed only to users who have not joined. Owner/Admin accounts bypass FSub checks. Permanent public bot links and channel invitations retain their own existing lifecycle after FSub verification.
