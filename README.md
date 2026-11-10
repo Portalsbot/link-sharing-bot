@@ -44,6 +44,15 @@ python -m link_sharing_bot.main
 | `/set_api HTTPS_ENDPOINT API_KEY` | Configure generic GET shortener API (Owner only; encrypted storage and allowlisted HTTPS host required) |
 | `/shortnerstatus`, `/shortnerstats`, `/linkhistory` | Shortener status and statistics |
 | `/channelstats CHANNEL_ID` | Join-request analytics |
+| `/publiclinks`, `/editlink ENTRY_ID URL [LABEL]`, `/checkduplicate URL` | Manage permanent public bot links |
+| `/scheduledlinks`, `/cancelschedule JOB_ID` | Inspect or cancel durable scheduled invitations |
+| `/joinrequests`, `/approve USER_ID CHANNEL_ID`, `/decline USER_ID CHANNEL_ID` | Manual join-request queue and decisions |
+| `/requeststats`, `/requesthistory`, `/linkstats` | Request and link dashboards |
+| `/users`, `/userinfo USER_ID`, `/blockuser USER_ID`, `/unblockuser USER_ID` | User management |
+| `/security`, `/database`, `/diagnostics` | Security, database and runtime diagnostics |
+| `/broadcast`, `/broadcasts`, `/cancelbroadcast ID` | Immediate and scheduled text/media broadcasts with URL buttons |
+| `/setbackupchannel CHANNEL_ID`, `/backup`, `/backups` | Configure and create Telegram-channel backups |
+| `/restore ID CONFIRM`, `/exportdata`, `/importdata` | Restore or transfer a validated JSON backup |
 | `/schedulelink CHANNEL_ID ISO_TIMESTAMP [request]` | Schedule an invite in the persistent PostgreSQL queue |
 | `/texts`, `/edittext`, `/previewtext`, `/resettext` | Edit messages |
 | `/buttons`, `/addbutton`, `/delbutton` | Edit inline URL buttons |
