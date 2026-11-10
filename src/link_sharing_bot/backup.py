@@ -196,6 +196,7 @@ async def importdata(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def import_document(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not _is_owner(update, context) or not context.user_data.pop("awaiting_backup_import", False):
         return
+    context.user_data["suppress_upload_once"] = True
     document = update.effective_message.document if update.effective_message else None
     if not document or not (document.file_name or "").lower().endswith(".json"):
         await _send(context, update.effective_chat.id, "Please upload a .json backup file.")
