@@ -23,7 +23,11 @@ python -m link_sharing_bot.main
 | Command | Use |
 |---|---|
 | `/start`, `/help`, `/about`, `/ping` | Basic interface |
-| `/addch CHANNEL_ID` | Register target channel; bot needs admin invite permission |
+| `/addch CHANNEL_ID` | Register channel and return a permanent public bot deep link |
+| `/newlink URL [LABEL]` | Save an external URL behind a permanent public bot deep link |
+| `/publiclinks` | List saved public bot-link entries |
+| `/deletelink ENTRY_ID` | Disable one saved public bot-link entry |
+| `/setttl CHANNEL_ID SECONDS` | Set expiry for future temporary channel invites |
 | `/delch CHANNEL_ID` | Remove registered channel |
 | `/channels`, `/channelpanel` | List registered channels |
 | `/genlink CHANNEL_ID [request] [TTL_SECONDS]` | Generate invite link |
