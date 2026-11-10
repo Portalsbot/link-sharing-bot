@@ -8,8 +8,8 @@ from telegram.ext import ContextTypes, CommandHandler, MessageHandler, filters
 from .branding import send_branded, close_keyboard
 
 
-TABLES = ["bot_message_templates","bot_message_buttons","bot_users","link_channels","link_invites","link_join_events","link_fsub_channels","link_settings","link_shortener_events","link_public_entries","link_scheduled_jobs","link_pending_join_requests"]
-SERIAL_TABLES = ["link_invites","link_join_events","link_shortener_events","link_scheduled_jobs"]
+TABLES = ["bot_message_templates","bot_message_buttons","bot_users","link_channels","link_invites","link_join_events","link_fsub_channels","link_settings","link_shortener_events","link_public_entries","link_scheduled_jobs","link_pending_join_requests","bot_broadcasts"]
+SERIAL_TABLES = ["link_invites","link_join_events","link_shortener_events","link_scheduled_jobs","bot_broadcasts"]
 PRODUCT = "link"
 SETTING_TABLE = "link_settings"
 BACKUP_SETTING = "backup_channel_id"
