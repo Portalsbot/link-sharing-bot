@@ -73,7 +73,13 @@ async def _restore_payload(context, payload):
                         raise ValueError(f"Invalid columns in {table}.")
                     placeholders = ",".join(f"\u0024{index}" for index in range(1, len(columns) + 1))
                     column_sql = ",".join(f'"{column}"' for column in columns)
-                    values = [row[column] for column in columns]
+                    values = []
+                    timestamp_columns = {"created_at","updated_at","first_seen","last_seen","expire_at","scheduled_at","finished_at","requested_at"}
+                    for column in columns:
+                        value = row[column]
+                        if column in timestamp_columns and isinstance(value, str):
+                            value = datetime.fromisoformat(value)
+                        values.append(value)
                     await conn.execute(
                         f'INSERT INTO "{table}" ({column_sql}) VALUES ({placeholders})', *values)
             for table in SERIAL_TABLES:
