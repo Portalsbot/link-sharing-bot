@@ -61,9 +61,22 @@ python -m link_sharing_bot.main
 
 Use `(B)`, `(I)`, `(U)`, `(S)`, `(CODE)`, `(PRE)`, `(Q)`, `(SPOILER)` and `(LINK url="https://...")` markup in editable templates.
 
-## Not yet implemented
+## Current implementation status
 
-Full paginated channel UI, durable scheduling, full FSub membership gate, approval welcome templates, built-in adapters for each named shortener, alias support, DNS/IP SSRF guard, broadcast engine, advanced per-channel request queue, and full analytics dashboard.
+- Public bot deep links and temporary Telegram invitations have separate lifecycles. The public link remains permanent; each Start creates a fresh invitation using the channel TTL.
+- External URLs saved with `/newlink` remain unchanged until their public bot entry is disabled or edited.
+- FSub is checked before both channel and external public entries. The bot must be an administrator in every FSub channel; private channels also require invite-link permission.
+- Pending join requests are persisted and can be reviewed with `/joinrequests`, `/approve` and `/decline`. Automatic approval uses the channel policy and global delay.
+- Scheduled invitation jobs persist in PostgreSQL and can be listed/cancelled. Interrupted in-flight jobs are marked for review rather than replayed blindly.
+- Shortener credentials are Fernet-encrypted at rest. The provider hostname must match `SHORTENER_ALLOWED_HOSTS`, resolve only to public IPs, and use HTTPS. Set `SHORTENER_ENCRYPTION_KEY` before using `/set_api`.
+- Text/media broadcasts support URL buttons, immediate delivery, durable scheduled delivery, reports and cancellation.
+- Telegram-channel backups, JSON export/import and Owner-confirmed restore are implemented. Configure `/setbackupchannel` before relying on remote backups.
+- User management, link/request analytics, database/security diagnostics, and automatic Telegram admin command menus are implemented.
+- The HTTP health endpoint is `/health` when a `PORT` environment variable is supplied.
+
+## Remaining constraints
+
+Provider-specific shortener response formats may require an adapter. The generic adapter expects a JSON response with `shortenedUrl`, `short_url` or `url`. Set the shortener encryption key and exact allowed hostname in the deployment environment; the repository intentionally contains no production key. PostgreSQL-native backups are still recommended for databases too large for Telegram document limits.
 \n## Public links versus temporary channel invitations\n\n- `/addch CHANNEL_ID` registers the channel and returns a permanent public bot deep link. Share that bot link publicly.\n- When someone opens that public link and presses Start, the bot creates a fresh Telegram channel invite using the channel's configured TTL and sends it as an inline button. The public bot link never expires because of this TTL.\n- `/setttl CHANNEL_ID SECONDS` changes the TTL for future generated invites (60–604800 seconds). Existing Telegram invites retain their own expiry.\n- `/newlink HTTPS_URL [LABEL]` stores an external destination URL unchanged behind a permanent public bot deep link. It is not auto-expired by the bot. Use `/publiclinks` to view entries and `/deletelink ENTRY_ID` to disable one. Disabling the bot entry does not revoke or modify the external destination itself.\n- New channel registrations default to manual join-request handling; explicitly enable automatic approval with the channel approval command if desired.\n
 
 ## Channel links, force-subscription and scheduling
