@@ -729,6 +729,146 @@ async def cancelschedule(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await reply(update, context, body)
 
 
+async def apiusage(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await shortnerstats(update, context)
+
+
+async def requeststats(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_admin(update, context): return
+    rows = await context.application.bot_data["db"].require().fetch(
+        """SELECT status,COUNT(*) AS total FROM link_pending_join_requests
+           WHERE clone_id=$1 GROUP BY status ORDER BY status""", context.application.bot_data["clone_id"])
+    body = "**ᴊᴏɪɴ ʀᴇǫᴜᴇsᴛ ᴀɴᴀʟʏᴛɪᴄs**\\n\\n" + (
+        "\\n".join(f"{row['status']}: {row['total']}" for row in rows) if rows else "No request history.")
+    await reply(update, context, body)
+
+
+async def requesthistory(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_admin(update, context): return
+    rows = await context.application.bot_data["db"].require().fetch(
+        """SELECT channel_id,user_id,status,requested_at,updated_at FROM link_pending_join_requests
+           WHERE clone_id=$1 ORDER BY requested_at DESC LIMIT 30""", context.application.bot_data["clone_id"])
+    body = "**ᴊᴏɪɴ ʀᴇǫᴜᴇsᴛ ʜɪsᴛᴏʀʏ**\\n\\n" + (
+        "\\n".join(f"{r['status']} · channel {r['channel_id']} · user {r['user_id']} · {r['requested_at']}" for r in rows)
+        if rows else "No request history.")
+    await reply(update, context, body)
+
+
+async def linkstats(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_admin(update, context): return
+    row = await context.application.bot_data["db"].require().fetchrow(
+        """SELECT (SELECT COUNT(*) FROM link_public_entries WHERE clone_id=$1 AND is_active=TRUE) AS public_entries,
+           (SELECT COUNT(*) FROM link_invites WHERE clone_id=$1) AS invites,
+           (SELECT COUNT(*) FROM link_invites WHERE clone_id=$1 AND revoked=FALSE AND expire_at>NOW()) AS unexpired_invites,
+           (SELECT COUNT(*) FROM link_channels WHERE clone_id=$1) AS channels""",
+        context.application.bot_data["clone_id"])
+    await reply(update, context,
+        f"**ʟɪɴᴋ ᴅᴀsʜʙᴏᴀʀᴅ**\\nChannels: {row['channels']}\\nPublic entries: {row['public_entries']}\\nTotal invites: {row['invites']}\\nCurrently unexpired invites: {row['unexpired_invites']}")
+
+
+async def users(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_admin(update, context): return
+    db = context.application.bot_data["db"].require()
+    clone_id = context.application.bot_data["clone_id"]
+    total = await db.fetchval("SELECT COUNT(*) FROM bot_users WHERE clone_id=$1", clone_id)
+    rows = await db.fetch("SELECT user_id,is_banned,last_seen FROM bot_users WHERE clone_id=$1 ORDER BY last_seen DESC LIMIT 25", clone_id)
+    body = f"**ᴜsᴇʀ ᴅᴀsʜʙᴏᴀʀᴅ** · Total: {total}\\n\\n" + (
+        "\\n".join(f"{r['user_id']} · {'blocked' if r['is_banned'] else 'active'} · {r['last_seen']}" for r in rows)
+        if rows else "No registered users.")
+    await reply(update, context, body)
+
+
+async def userinfo(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_admin(update, context): return
+    if len(context.args) != 1 or not context.args[0].isdigit():
+        body = "Usage: /userinfo USER_ID"
+    else:
+        row = await context.application.bot_data["db"].require().fetchrow(
+            "SELECT user_id,first_seen,last_seen,is_banned FROM bot_users WHERE clone_id=$1 AND user_id=$2",
+            context.application.bot_data["clone_id"], int(context.args[0]))
+        body = f"User: {row['user_id']}\\nFirst seen: {row['first_seen']}\\nLast seen: {row['last_seen']}\\nBlocked: {row['is_banned']}" if row else "User not found."
+    await reply(update, context, body)
+
+
+async def blockuser(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_admin(update, context): return
+    if len(context.args) != 1 or not context.args[0].isdigit():
+        body = "Usage: /blockuser USER_ID"
+    else:
+        result = await context.application.bot_data["db"].require().execute(
+            "UPDATE bot_users SET is_banned=TRUE WHERE clone_id=$1 AND user_id=$2",
+            context.application.bot_data["clone_id"], int(context.args[0]))
+        body = "User blocked." if result.endswith("1") else "User not found."
+    await reply(update, context, body)
+
+
+async def unblockuser(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_admin(update, context): return
+    if len(context.args) != 1 or not context.args[0].isdigit():
+        body = "Usage: /unblockuser USER_ID"
+    else:
+        result = await context.application.bot_data["db"].require().execute(
+            "UPDATE bot_users SET is_banned=FALSE WHERE clone_id=$1 AND user_id=$2",
+            context.application.bot_data["clone_id"], int(context.args[0]))
+        body = "User unblocked." if result.endswith("1") else "User not found."
+    await reply(update, context, body)
+
+
+async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_admin(update, context): return
+    row = await context.application.bot_data["db"].require().fetchrow(
+        """SELECT (SELECT COUNT(*) FROM bot_users WHERE clone_id=$1) AS users,
+           (SELECT COUNT(*) FROM link_channels WHERE clone_id=$1) AS channels,
+           (SELECT COUNT(*) FROM link_public_entries WHERE clone_id=$1 AND is_active=TRUE) AS public_links,
+           (SELECT COUNT(*) FROM link_join_events WHERE clone_id=$1) AS join_events""",
+        context.application.bot_data["clone_id"])
+    await reply(update, context,
+        f"**sʏsᴛᴇᴍ sᴛᴀᴛs**\\nUsers: {row['users']}\\nChannels: {row['channels']}\\nPublic links: {row['public_links']}\\nJoin events: {row['join_events']}")
+
+
+async def logs(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_admin(update, context): return
+    rows = await context.application.bot_data["db"].require().fetch(
+        """SELECT channel_id,user_id,event_status,created_at FROM link_join_events
+           WHERE clone_id=$1 ORDER BY id DESC LIMIT 25""", context.application.bot_data["clone_id"])
+    body = "**ʀᴇᴄᴇɴᴛ ᴊᴏɪɴ ʟᴏɢs**\\n\\n" + (
+        "\\n".join(f"{r['event_status']} · channel {r['channel_id']} · user {r['user_id']} · {r['created_at']}" for r in rows)
+        if rows else "No join events.")
+    await reply(update, context, body)
+
+
+async def security(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_admin(update, context): return
+    hosts = sorted(host.strip() for host in os.getenv("SHORTENER_ALLOWED_HOSTS", "").split(",") if host.strip())
+    encrypted_key = bool(os.getenv("SHORTENER_ENCRYPTION_KEY", "").strip())
+    fsub_count = await context.application.bot_data["db"].require().fetchval(
+        "SELECT COUNT(*) FROM link_fsub_channels WHERE clone_id=$1", context.application.bot_data["clone_id"])
+    await reply(update, context,
+        f"**sᴇᴄᴜʀɪᴛʏ ᴄʜᴇᴄᴋ**\\nShortener encryption key configured: {encrypted_key}\\nAllowed shortener hosts: {', '.join(hosts) if hosts else 'none'}\\nFSub channels: {fsub_count}")
+
+
+async def database_status(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_admin(update, context): return
+    try:
+        value = await context.application.bot_data["db"].require().fetchval("SELECT 1")
+        body = "PostgreSQL connection: healthy." if value == 1 else "PostgreSQL returned an unexpected response."
+    except Exception as exc:
+        body = f"Database check failed: {type(exc).__name__}."
+    await reply(update, context, body)
+
+
+async def diagnostics(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_admin(update, context): return
+    try:
+        me = await context.bot.get_me()
+        db = await context.application.bot_data["db"].require().fetchval("SELECT 1")
+        queue = "available" if context.job_queue else "unavailable"
+        body = f"Bot: @{me.username}\\nTelegram API: reachable\\nPostgreSQL: {'healthy' if db == 1 else 'unknown'}\\nJobQueue: {queue}"
+    except Exception as exc:
+        body = f"Diagnostics failed: {type(exc).__name__}: {str(exc)[:120]}"
+    await reply(update, context, body)
+
+
 async def channelpanel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await channels(update,context)
 
@@ -743,6 +883,9 @@ def add_link_handlers(app):
     app.add_handler(CommandHandler("add_fsub",add_fsub)); app.add_handler(CommandHandler("del_fsub",del_fsub)); app.add_handler(CommandHandler("fsub",fsub))
     app.add_handler(CommandHandler("shorten",shorten)); app.add_handler(CommandHandler("set_api",set_api)); app.add_handler(CommandHandler("shortnerstatus",shortnerstatus)); app.add_handler(CommandHandler("shortnerstats",shortnerstats)); app.add_handler(CommandHandler("linkhistory",linkhistory))
     app.add_handler(CommandHandler("channelstats",channelstats)); app.add_handler(CommandHandler("schedulelink",schedulelink)); app.add_handler(CommandHandler("scheduledlinks",scheduledlinks)); app.add_handler(CommandHandler("cancelschedule",cancelschedule))
+    app.add_handler(CommandHandler("apiusage",apiusage)); app.add_handler(CommandHandler("requeststats",requeststats)); app.add_handler(CommandHandler("requesthistory",requesthistory)); app.add_handler(CommandHandler("linkstats",linkstats))
+    app.add_handler(CommandHandler("users",users)); app.add_handler(CommandHandler("userinfo",userinfo)); app.add_handler(CommandHandler("blockuser",blockuser)); app.add_handler(CommandHandler("unblockuser",unblockuser)); app.add_handler(CommandHandler("stats",stats)); app.add_handler(CommandHandler("logs",logs))
+    app.add_handler(CommandHandler("security",security)); app.add_handler(CommandHandler("database",database_status)); app.add_handler(CommandHandler("diagnostics",diagnostics))
     app.add_handler(CallbackQueryHandler(check_fsub_callback, pattern=r"^fsub:check:"))
     app.add_handler(CommandHandler("joinrequests",joinrequests)); app.add_handler(CommandHandler("approve",approve_request)); app.add_handler(CommandHandler("decline",decline_request))
     app.add_handler(ChatJoinRequestHandler(handle_join_request))
