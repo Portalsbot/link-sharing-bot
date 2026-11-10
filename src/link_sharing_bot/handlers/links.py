@@ -2,6 +2,8 @@ from __future__ import annotations
 import logging
 from datetime import datetime, timedelta, timezone
 from urllib.parse import urlparse
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import CallbackQueryHandler
 import httpx
 from telegram import Update, ChatMemberAdministrator, ChatMemberOwner
 from telegram.ext import ContextTypes, CommandHandler, ChatJoinRequestHandler
@@ -27,6 +29,60 @@ async def reply(update, context, body, template_key: str | None = None):
 def _public_slug(channel_id: int) -> str:
     return f"ch{abs(int(channel_id))}"
 
+
+async def _missing_fsub(context, user_id: int):
+    rows = await context.application.bot_data["db"].require().fetch(
+        "SELECT channel_id,mode FROM link_fsub_channels WHERE clone_id=$1 ORDER BY channel_id",
+        context.application.bot_data["clone_id"],
+    )
+    missing = []
+    for row in rows:
+        channel_id = int(row["channel_id"])
+        try:
+            member = await context.bot.get_chat_member(channel_id, user_id)
+            if getattr(member, "status", "") in {"left", "kicked"}:
+                chat = await context.bot.get_chat(channel_id)
+                join_url = f"https://t.me/{chat.username}" if getattr(chat, "username", None) else await context.bot.export_chat_invite_link(channel_id)
+                missing.append((channel_id, join_url))
+        except Exception as exc:
+            log.warning("FSub membership check failed for %s: %s", channel_id, type(exc).__name__)
+            missing.append((channel_id, None))
+    return missing
+
+
+def _fsub_markup(missing, slug: str):
+    rows = []
+    for channel_id, join_url in missing:
+        if join_url:
+            rows.append([InlineKeyboardButton(f"· ᴊᴏɪɴ {channel_id} ·", url=join_url)])
+    rows.append([InlineKeyboardButton("· ɪ'ᴠᴇ ᴊᴏɪɴᴇᴅ ·", callback_data=f"fsub:check:{slug}")])
+    return InlineKeyboardMarkup(rows)
+
+
+async def check_fsub_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    if not query:
+        return
+    slug = query.data.split(":", 2)[2]
+    missing = await _missing_fsub(context, query.from_user.id)
+    if missing:
+        await query.answer("Please join every required channel first.", show_alert=True)
+        await send_branded(context.bot, query.message.chat_id,
+            "ᴘʟᴇᴀsᴇ ᴊᴏɪɴ ᴀʟʟ ʀᴇǫᴜɪʀᴇᴅ ᴄʜᴀɴɴᴇʟs, ᴛʜᴇɴ ᴛᴀᴘ ᴛʜᴇ ᴄʜᴇᴄᴋ ʙᴜᴛᴛᴏɴ.",
+            image_url=context.application.bot_data["image_url"],
+            image_path=context.application.bot_data["image_path"],
+            small_caps=context.application.bot_data["small_caps"],
+            reply_markup=_fsub_markup(missing, slug))
+        return
+    await query.answer("Membership verified.")
+    from types import SimpleNamespace
+    synthetic = SimpleNamespace(
+        effective_chat=query.message.chat,
+        effective_user=query.from_user,
+    )
+    await open_public_entry(synthetic, context, slug)
+
+
 async def open_public_entry(update: Update, context, slug: str) -> bool:
     db = context.application.bot_data["db"]
     row = await db.require().fetchrow(
@@ -43,6 +99,15 @@ async def open_public_entry(update: Update, context, slug: str) -> bool:
             small_caps=context.application.bot_data["small_caps"])
         return True
     if row["kind"] == "channel":
+        missing = await _missing_fsub(context, update.effective_user.id)
+        if missing:
+            await send_branded(context.bot, update.effective_chat.id,
+                "ᴘʟᴇᴀsᴇ ᴊᴏɪɴ ᴛʜᴇ ғᴏʟʟᴏᴡɪɴɢ ʀᴇǫᴜɪʀᴇᴅ ᴄʜᴀɴɴᴇʟs ᴛᴏ ᴄᴏɴᴛɪɴᴜᴇ.",
+                image_url=context.application.bot_data["image_url"],
+                image_path=context.application.bot_data["image_path"],
+                small_caps=context.application.bot_data["small_caps"],
+                reply_markup=_fsub_markup(missing, slug))
+            return True
         try:
             url, expires = await genlink_for_channel(context, int(row["channel_id"]), update.effective_user.id)
             seconds = max(0, int((expires - datetime.now(timezone.utc)).total_seconds()))
@@ -495,4 +560,5 @@ def add_link_handlers(app):
     app.add_handler(CommandHandler("add_fsub",add_fsub)); app.add_handler(CommandHandler("del_fsub",del_fsub)); app.add_handler(CommandHandler("fsub",fsub))
     app.add_handler(CommandHandler("shorten",shorten)); app.add_handler(CommandHandler("set_api",set_api)); app.add_handler(CommandHandler("shortnerstatus",shortnerstatus)); app.add_handler(CommandHandler("shortnerstats",shortnerstats)); app.add_handler(CommandHandler("linkhistory",linkhistory))
     app.add_handler(CommandHandler("channelstats",channelstats)); app.add_handler(CommandHandler("schedulelink",schedulelink))
+    app.add_handler(CallbackQueryHandler(check_fsub_callback, pattern=r"^fsub:check:"))
     app.add_handler(ChatJoinRequestHandler(handle_join_request))
