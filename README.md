@@ -41,17 +41,17 @@ python -m link_sharing_bot.main
 | `/add_fsub CHANNEL_ID normal|request` | Add FSub record |
 | `/del_fsub CHANNEL_ID`, `/fsub` | Remove/list FSub records |
 | `/shorten URL` | Use configured shortener |
-| `/set_api HTTPS_ENDPOINT API_KEY` | Configure generic GET shortener API (admin) |
+| `/set_api HTTPS_ENDPOINT API_KEY` | Configure generic GET shortener API (Owner only; encrypted storage and allowlisted HTTPS host required) |
 | `/shortnerstatus`, `/shortnerstats`, `/linkhistory` | Shortener status and statistics |
 | `/channelstats CHANNEL_ID` | Join-request analytics |
-| `/schedulelink CHANNEL_ID ISO_TIMESTAMP [request]` | Schedule an invite (current in-memory job queue) |
+| `/schedulelink CHANNEL_ID ISO_TIMESTAMP [request]` | Schedule an invite in the persistent PostgreSQL queue |
 | `/texts`, `/edittext`, `/previewtext`, `/resettext` | Edit messages |
 | `/buttons`, `/addbutton`, `/delbutton` | Edit inline URL buttons |
 
 ## Permissions and limitations
 
 - The bot must be an administrator in each target channel with `can_invite_users` permission to create/revoke invite links. Join-request workflows require the appropriate channel permissions.
-- FSub records are stored here; the full subscription-gating middleware and interactive channel wizard remain to be implemented.
+- FSub membership is checked before public channel and external-link delivery. The bot must be admin in each configured FSub channel; private FSub channels also need invite permission.
 - `/bulkexpire` changes the default expiry policy for future links; it does not modify Telegram's expiry on already-created invite links. Use `/revoke_links` to invalidate tracked current links.
 - `/schedulelink` currently uses the process job queue; jobs are lost after a process restart. Durable DB-backed scheduling is a production task.
 - The generic shortener expects a JSON response with `shortenedUrl`, `short_url` or `url`. Providers with different APIs need a dedicated adapter. Custom aliases are not guaranteed unless the provider API supports them.
