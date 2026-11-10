@@ -596,6 +596,10 @@ async def shorten(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def set_api(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != context.application.bot_data["owner_id"]:
         return
+    try:
+        await update.effective_message.delete()
+    except Exception:
+        log.warning("Could not delete the shortener API configuration command message.")
     if len(context.args)!=2:
         body="Usage: /set_api HTTPS_ENDPOINT API_KEY. Owner only."
     else:
