@@ -65,3 +65,13 @@ Use `(B)`, `(I)`, `(U)`, `(S)`, `(CODE)`, `(PRE)`, `(Q)`, `(SPOILER)` and `(LINK
 
 Full paginated channel UI, durable scheduling, full FSub membership gate, approval welcome templates, built-in adapters for each named shortener, alias support, DNS/IP SSRF guard, broadcast engine, advanced per-channel request queue, and full analytics dashboard.
 \n## Public links versus temporary channel invitations\n\n- `/addch CHANNEL_ID` registers the channel and returns a permanent public bot deep link. Share that bot link publicly.\n- When someone opens that public link and presses Start, the bot creates a fresh Telegram channel invite using the channel's configured TTL and sends it as an inline button. The public bot link never expires because of this TTL.\n- `/setttl CHANNEL_ID SECONDS` changes the TTL for future generated invites (60–604800 seconds). Existing Telegram invites retain their own expiry.\n- `/newlink HTTPS_URL [LABEL]` stores an external destination URL unchanged behind a permanent public bot deep link. It is not auto-expired by the bot. Use `/publiclinks` to view entries and `/deletelink ENTRY_ID` to disable one. Disabling the bot entry does not revoke or modify the external destination itself.\n- New channel registrations default to manual join-request handling; explicitly enable automatic approval with the channel approval command if desired.\n
+
+## Channel links, force-subscription and scheduling
+
+- `/addch CHANNEL_ID` creates a permanent public bot deep link. The bot generates a new Telegram invite each time a user starts through that link.
+- `/setttl CHANNEL_ID SECONDS` applies only to future invites. It does not expire or disable the permanent public bot link.
+- `/newlink HTTPS_URL LABEL` creates a permanent bot deep link to an unchanged external URL. It remains available until `/deletelink ENTRY_ID`.
+- `/add_fsub CHANNEL_ID normal|request` adds a force-subscription channel. The bot must be an administrator there so Telegram membership checks are reliable.
+- `/joinrequests`, `/approve USER_ID CHANNEL_ID` and `/decline USER_ID CHANNEL_ID` provide manual join-request handling. Configure automatic handling with `/setapproval`.
+- `/schedulelink CHANNEL_ID YYYY-MM-DDTHH:MM:SS+05:30` stores a durable PostgreSQL job. Use `/scheduledlinks` and `/cancelschedule JOB_ID` to manage pending jobs.
+- Shortener configuration is intentionally locked down: set `SHORTENER_ALLOWED_HOSTS` to the exact provider hostname and `SHORTENER_ENCRYPTION_KEY` to a Fernet key before using `/set_api`. API credentials are encrypted before storage. Existing plaintext shortener records from older versions will not be accepted; reconfigure them after setting the key.
