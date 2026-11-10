@@ -77,7 +77,13 @@ async def _missing_fsub(context, user_id: int):
             member = await context.bot.get_chat_member(channel_id, user_id)
             if getattr(member, "status", "") in {"left", "kicked"}:
                 chat = await context.bot.get_chat(channel_id)
-                join_url = f"https://t.me/{chat.username}" if getattr(chat, "username", None) else await context.bot.export_chat_invite_link(channel_id)
+                if getattr(chat, "username", None):
+                    join_url = f"https://t.me/{chat.username}"
+                elif row["mode"] == "request":
+                    invite = await context.bot.create_chat_invite_link(channel_id, creates_join_request=True)
+                    join_url = invite.invite_link
+                else:
+                    join_url = await context.bot.export_chat_invite_link(channel_id)
                 missing.append((channel_id, join_url))
         except Exception as exc:
             log.warning("FSub membership check failed for %s: %s", channel_id, type(exc).__name__)
@@ -393,7 +399,12 @@ async def add_fsub(update: Update, context: ContextTypes.DEFAULT_TYPE):
         body="Usage: `/add_fsub CHANNEL_ID normal|request`"
     else:
         try:
-            cid=int(context.args[0]); await context.bot.get_chat(cid)
+            cid=int(context.args[0])
+            await context.bot.get_chat(cid)
+            me = await context.bot.get_me()
+            member = await context.bot.get_chat_member(cid, me.id)
+            if getattr(member, "status", "") not in {"administrator", "creator"}:
+                raise PermissionError("Bot must be an administrator in each FSub channel to verify membership.")
             await context.application.bot_data["db"].require().execute(
                 "INSERT INTO link_fsub_channels(clone_id,channel_id,mode) VALUES($1,$2,$3) ON CONFLICT(clone_id,channel_id) DO UPDATE SET mode=EXCLUDED.mode",
                 context.application.bot_data["clone_id"],cid,context.args[1].lower())
