@@ -729,6 +729,43 @@ async def cancelschedule(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await reply(update, context, body)
 
 
+async def checkduplicate(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_admin(update, context): return
+    if not context.args:
+        body = "Usage: /checkduplicate HTTPS_URL"
+    else:
+        url = context.args[0].strip()
+        row = await context.application.bot_data["db"].require().fetchrow(
+            """SELECT 'public_entry' AS source,id,title FROM link_public_entries
+               WHERE clone_id=$1 AND target_url=$2
+               UNION ALL
+               SELECT 'shortener_history' AS source,id,original_url AS title FROM link_shortener_events
+               WHERE clone_id=$1 AND original_url=$2 LIMIT 1""",
+            context.application.bot_data["clone_id"], url)
+        body = f"Duplicate found in {row['source']} · Record #{row['id']} · {row['title']}" if row else "No exact duplicate URL found."
+    await reply(update, context, body)
+
+
+async def editlink(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_admin(update, context): return
+    if len(context.args) < 2 or not context.args[0].isdigit():
+        body = "Usage: /editlink ENTRY_ID NEW_URL [LABEL]"
+    else:
+        entry_id = int(context.args[0])
+        url = context.args[1].strip()
+        parsed = urlparse(url)
+        if parsed.scheme not in {"http", "https"} or not parsed.netloc or parsed.username or parsed.password:
+            body = "Provide a valid HTTP(S) destination URL."
+        else:
+            title = " ".join(context.args[2:]).strip() or None
+            result = await context.application.bot_data["db"].require().execute(
+                """UPDATE link_public_entries SET target_url=$1,title=COALESCE($2,title)
+                   WHERE clone_id=$3 AND id=$4 AND kind='external' AND is_active=TRUE""",
+                url, title, context.application.bot_data["clone_id"], entry_id)
+            body = "Permanent destination updated. Its public bot link remains unchanged." if result.endswith("1") else "Active external entry not found."
+    await reply(update, context, body)
+
+
 async def apiusage(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await shortnerstats(update, context)
 
@@ -874,14 +911,14 @@ async def channelpanel(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 def add_link_handlers(app):
     app.add_handler(CommandHandler("addch",addch)); app.add_handler(CommandHandler("addchat",addch))
-    app.add_handler(CommandHandler("newlink",newlink)); app.add_handler(CommandHandler("deletelink",deletelink)); app.add_handler(CommandHandler("setttl",setttl)); app.add_handler(CommandHandler("publiclinks",publiclinks))
+    app.add_handler(CommandHandler("newlink",newlink)); app.add_handler(CommandHandler("editlink",editlink)); app.add_handler(CommandHandler("checkduplicate",checkduplicate)); app.add_handler(CommandHandler("deletelink",deletelink)); app.add_handler(CommandHandler("setttl",setttl)); app.add_handler(CommandHandler("publiclinks",publiclinks))
     app.add_handler(CommandHandler("delch",delch)); app.add_handler(CommandHandler("delchat",delch))
     app.add_handler(CommandHandler("channels",channels)); app.add_handler(CommandHandler("channelpanel",channelpanel))
     app.add_handler(CommandHandler("genlink",genlink)); app.add_handler(CommandHandler("bulklink",bulklink)); app.add_handler(CommandHandler("links",links))
     app.add_handler(CommandHandler("revoke_links",revoke_links)); app.add_handler(CommandHandler("bulkexpire",bulkexpire))
     app.add_handler(CommandHandler("setapproval",setapproval)); app.add_handler(CommandHandler("reqmode",reqmode)); app.add_handler(CommandHandler("reqtime",reqtime))
     app.add_handler(CommandHandler("add_fsub",add_fsub)); app.add_handler(CommandHandler("del_fsub",del_fsub)); app.add_handler(CommandHandler("fsub",fsub))
-    app.add_handler(CommandHandler("shorten",shorten)); app.add_handler(CommandHandler("set_api",set_api)); app.add_handler(CommandHandler("shortnerstatus",shortnerstatus)); app.add_handler(CommandHandler("shortnerstats",shortnerstats)); app.add_handler(CommandHandler("linkhistory",linkhistory))
+    app.add_handler(CommandHandler("shorten",shorten)); app.add_handler(CommandHandler("set_api",set_api)); app.add_handler(CommandHandler("setshortener",set_api)); app.add_handler(CommandHandler("shortnerstatus",shortnerstatus)); app.add_handler(CommandHandler("shortenerhealth",shortnerstatus)); app.add_handler(CommandHandler("shortnerstats",shortnerstats)); app.add_handler(CommandHandler("shortenerstats",shortnerstats)); app.add_handler(CommandHandler("linkhistory",linkhistory))
     app.add_handler(CommandHandler("channelstats",channelstats)); app.add_handler(CommandHandler("schedulelink",schedulelink)); app.add_handler(CommandHandler("scheduledlinks",scheduledlinks)); app.add_handler(CommandHandler("cancelschedule",cancelschedule))
     app.add_handler(CommandHandler("apiusage",apiusage)); app.add_handler(CommandHandler("requeststats",requeststats)); app.add_handler(CommandHandler("requesthistory",requesthistory)); app.add_handler(CommandHandler("linkstats",linkstats))
     app.add_handler(CommandHandler("users",users)); app.add_handler(CommandHandler("userinfo",userinfo)); app.add_handler(CommandHandler("blockuser",blockuser)); app.add_handler(CommandHandler("unblockuser",unblockuser)); app.add_handler(CommandHandler("stats",stats)); app.add_handler(CommandHandler("logs",logs))
