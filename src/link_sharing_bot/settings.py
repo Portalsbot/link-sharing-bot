@@ -132,6 +132,7 @@ async def configure_command_menu(app):
         BotCommand("ping", "Check bot response"),
     ]
     admin_commands = [
+        BotCommand("fsubs", "Manage force-subscription channels and message"),
         BotCommand("addch", "Register a target channel"),
         BotCommand("newlink", "Create a permanent external bot link"),
         BotCommand("editlink", "Edit a saved external destination"),
