@@ -75,7 +75,8 @@ async def _missing_fsub(context, user_id: int):
         channel_id = int(row["channel_id"])
         try:
             member = await context.bot.get_chat_member(channel_id, user_id)
-            if getattr(member, "status", "") in {"left", "kicked"}:
+            status = getattr(member, "status", "")
+            if status in {"left", "kicked"} or (status == "restricted" and not getattr(member, "is_member", False)):
                 chat = await context.bot.get_chat(channel_id)
                 if getattr(chat, "username", None):
                     join_url = f"https://t.me/{chat.username}"
@@ -139,16 +140,16 @@ async def open_public_entry(update: Update, context, slug: str) -> bool:
             image_path=context.application.bot_data["image_path"],
             small_caps=context.application.bot_data["small_caps"])
         return True
+    missing = await _missing_fsub(context, update.effective_user.id)
+    if missing:
+        await send_branded(context.bot, update.effective_chat.id,
+            "ᴘʟᴇᴀsᴇ ᴊᴏɪɴ ᴛʜᴇ ғᴏʟʟᴏᴡɪɴɢ ʀᴇǫᴜɪʀᴇᴅ ᴄʜᴀɴɴᴇʟs ᴛᴏ ᴄᴏɴᴛɪɴᴜᴇ.",
+            image_url=context.application.bot_data["image_url"],
+            image_path=context.application.bot_data["image_path"],
+            small_caps=context.application.bot_data["small_caps"],
+            reply_markup=_fsub_markup(missing, slug))
+        return True
     if row["kind"] == "channel":
-        missing = await _missing_fsub(context, update.effective_user.id)
-        if missing:
-            await send_branded(context.bot, update.effective_chat.id,
-                "ᴘʟᴇᴀsᴇ ᴊᴏɪɴ ᴛʜᴇ ғᴏʟʟᴏᴡɪɴɢ ʀᴇǫᴜɪʀᴇᴅ ᴄʜᴀɴɴᴇʟs ᴛᴏ ᴄᴏɴᴛɪɴᴜᴇ.",
-                image_url=context.application.bot_data["image_url"],
-                image_path=context.application.bot_data["image_path"],
-                small_caps=context.application.bot_data["small_caps"],
-                reply_markup=_fsub_markup(missing, slug))
-            return True
         try:
             url, expires = await genlink_for_channel(context, int(row["channel_id"]), update.effective_user.id)
             seconds = max(0, int((expires - datetime.now(timezone.utc)).total_seconds()))
