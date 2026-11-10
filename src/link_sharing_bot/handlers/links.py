@@ -755,9 +755,160 @@ async def bulkrenew(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def channelpanel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await channels(update,context)
 
+async def editlink(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_admin(update, context): return
+    if len(context.args) < 2 or not context.args[0].isdigit():
+        body = "Usage: /editlink ENTRY_ID HTTPS_URL [LABEL]"
+    else:
+        entry_id = int(context.args[0])
+        url = context.args[1].strip()
+        parsed = urlparse(url)
+        if parsed.scheme not in {"https", "http"} or not parsed.netloc or parsed.username or parsed.password:
+            body = "Provide a valid public HTTP(S) URL."
+        else:
+            title = " ".join(context.args[2:]).strip() or None
+            result = await context.application.bot_data["db"].require().execute(
+                """UPDATE link_public_entries SET target_url=$1,title=COALESCE($2,title)
+                   WHERE clone_id=$3 AND id=$4 AND kind='external' AND is_active=TRUE""",
+                url, title, context.application.bot_data["clone_id"], entry_id)
+            body = "Saved destination updated. The permanent public bot link is unchanged." if result.endswith("1") else "Active external entry not found."
+    await reply(update, context, body)
+
+
+async def checkduplicate(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_admin(update, context): return
+    if len(context.args) != 1:
+        body = "Usage: /checkduplicate HTTPS_URL"
+    else:
+        rows = await context.application.bot_data["db"].require().fetch(
+            """SELECT id,title,slug,is_active FROM link_public_entries
+               WHERE clone_id=$1 AND kind='external' AND target_url=$2 ORDER BY id DESC LIMIT 20""",
+            context.application.bot_data["clone_id"], context.args[0].strip())
+        body = "Exact URL matches:\\n" + "\\n".join(
+            f"#{row['id']} · {row['title']} · {'active' if row['is_active'] else 'disabled'}"
+            for row in rows) if rows else "No exact URL duplicate found."
+    await reply(update, context, body)
+
+
+async def requeststats(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_admin(update, context): return
+    rows = await context.application.bot_data["db"].require().fetch(
+        """SELECT status,COUNT(*) AS total FROM link_pending_join_requests
+           WHERE clone_id=$1 GROUP BY status ORDER BY status""",
+        context.application.bot_data["clone_id"])
+    body = "Join-request totals:\\n" + ("\\n".join(f"{r['status']}: {r['total']}" for r in rows) if rows else "No requests recorded.")
+    await reply(update, context, body)
+
+
+async def diagnostics(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_admin(update, context): return
+    results = []
+    try:
+        me = await context.bot.get_me()
+        results.append(f"Telegram API: OK (@{me.username})")
+    except Exception as exc:
+        results.append(f"Telegram API: FAILED ({type(exc).__name__})")
+    try:
+        value = await context.application.bot_data["db"].require().fetchval("SELECT 1")
+        results.append("PostgreSQL: OK" if value == 1 else "PostgreSQL: unexpected response")
+    except Exception as exc:
+        results.append(f"PostgreSQL: FAILED ({type(exc).__name__})")
+    results.append("Scheduled-link worker: enabled" if context.application.job_queue else "Scheduled-link worker: MISSING JobQueue")
+    await reply(update, context, "Runtime diagnostics\\n\\n" + "\\n".join(results))
+
+
+async def schedulelink(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_admin(update, context): return
+    if len(context.args) not in {2, 3}:
+        body = "Usage: /schedulelink CHANNEL_ID ISO_TIMESTAMP [request]"
+    else:
+        try:
+            channel_id = int(context.args[0])
+            when = datetime.fromisoformat(context.args[1])
+            if when.tzinfo is None:
+                raise ValueError("Timestamp must include a timezone offset, e.g. +05:30.")
+            when = when.astimezone(timezone.utc)
+            if when <= datetime.now(timezone.utc) or when > datetime.now(timezone.utc) + timedelta(days=365):
+                raise ValueError("Choose a time within the next 365 days.")
+            request_mode = len(context.args) == 3 and context.args[2].lower() == "request"
+            if len(context.args) == 3 and not request_mode:
+                raise ValueError("The only optional mode is 'request'.")
+            exists = await context.application.bot_data["db"].require().fetchval(
+                "SELECT 1 FROM link_channels WHERE clone_id=$1 AND channel_id=$2",
+                context.application.bot_data["clone_id"], channel_id)
+            if not exists:
+                raise ValueError("Channel is not registered. Use /addch first.")
+            job_id = await context.application.bot_data["db"].require().fetchval(
+                """INSERT INTO link_scheduled_jobs(clone_id,channel_id,user_id,request_mode,scheduled_at)
+                   VALUES($1,$2,$3,$4,$5) RETURNING id""",
+                context.application.bot_data["clone_id"], channel_id, update.effective_user.id, request_mode, when)
+            body = f"Invitation job #{job_id} scheduled for {when.isoformat()}."
+        except Exception as exc:
+            body = f"Schedule not created: {str(exc)[:180]}"
+    await reply(update, context, body)
+
+
+async def scheduled_link_worker(context: ContextTypes.DEFAULT_TYPE):
+    db = context.application.bot_data["db"].require()
+    clone_id = context.application.bot_data["clone_id"]
+    rows = await db.fetch(
+        """SELECT id FROM link_scheduled_jobs WHERE clone_id=$1 AND status='pending'
+           AND scheduled_at<=NOW() ORDER BY scheduled_at LIMIT 20""", clone_id)
+    for item in rows:
+        job = await db.fetchrow(
+            """UPDATE link_scheduled_jobs SET status='processing'
+               WHERE clone_id=$1 AND id=$2 AND status='pending' RETURNING *""",
+            clone_id, item["id"])
+        if not job: continue
+        try:
+            url, expires = await genlink_for_channel(
+                context, int(job["channel_id"]), int(job["user_id"]), bool(job["request_mode"]))
+            await db.execute(
+                """UPDATE link_scheduled_jobs SET status='completed',invite_url=$1,finished_at=NOW()
+                   WHERE clone_id=$2 AND id=$3""", url, clone_id, job["id"])
+            await reply_to_user(context, int(job["user_id"]),
+                f"Your scheduled channel invitation is ready.\\n{url}\\nExpires: {expires.isoformat()}")
+        except Exception as exc:
+            await db.execute(
+                """UPDATE link_scheduled_jobs SET status='failed',error_detail=$1,finished_at=NOW()
+                   WHERE clone_id=$2 AND id=$3""", f"{type(exc).__name__}: {str(exc)[:300]}", clone_id, job["id"])
+
+
+async def reply_to_user(context, user_id: int, body: str):
+    await send_branded(context.bot, user_id, body,
+        image_url=context.application.bot_data["image_url"],
+        image_path=context.application.bot_data["image_path"],
+        small_caps=context.application.bot_data["small_caps"])
+
+
+async def scheduledlinks(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_admin(update, context): return
+    rows = await context.application.bot_data["db"].require().fetch(
+        """SELECT id,channel_id,scheduled_at,status FROM link_scheduled_jobs
+           WHERE clone_id=$1 ORDER BY id DESC LIMIT 50""",
+        context.application.bot_data["clone_id"])
+    body = "Scheduled invitations:\\n" + ("\\n".join(
+        f"#{r['id']} · {r['channel_id']} · {r['scheduled_at'].isoformat()} · {r['status']}" for r in rows)
+        if rows else "No scheduled invitations.")
+    await reply(update, context, body)
+
+
+async def cancelschedule(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_admin(update, context): return
+    if len(context.args) != 1 or not context.args[0].isdigit():
+        body = "Usage: /cancelschedule JOB_ID"
+    else:
+        result = await context.application.bot_data["db"].require().execute(
+            """UPDATE link_scheduled_jobs SET status='cancelled',finished_at=NOW()
+               WHERE clone_id=$1 AND id=$2 AND status='pending'""",
+            context.application.bot_data["clone_id"], int(context.args[0]))
+        body = "Scheduled invitation cancelled." if result.endswith("1") else "Pending job not found; it may already be processing or finished."
+    await reply(update, context, body)
+
+
 def add_link_handlers(app):
     app.add_handler(CommandHandler("addch",addch)); app.add_handler(CommandHandler("addchat",addch))
-    app.add_handler(CommandHandler("newlink",newlink)); app.add_handler(CommandHandler("editlink",editlink)); app.add_handler(CommandHandler("checkduplicate",checkduplicate)); app.add_handler(CommandHandler("deletelink",deletelink)); app.add_handler(CommandHandler("setttl",setttl)); app.add_handler(CommandHandler("publiclinks",publiclinks))
+    app.add_handler(CommandHandler("newlink",newlink)); app.add_handler(CommandHandler("editlink",editlink)); app.add_handler(CommandHandler("checkduplicate",checkduplicate));\n    app.add_handler(CommandHandler("schedulelink",schedulelink)); app.add_handler(CommandHandler("scheduledlinks",scheduledlinks)); app.add_handler(CommandHandler("cancelschedule",cancelschedule)); app.add_handler(CommandHandler("requeststats",requeststats)); app.add_handler(CommandHandler("diagnostics",diagnostics)); app.add_handler(CommandHandler("editlink",editlink)); app.add_handler(CommandHandler("checkduplicate",checkduplicate)); app.add_handler(CommandHandler("deletelink",deletelink)); app.add_handler(CommandHandler("setttl",setttl)); app.add_handler(CommandHandler("publiclinks",publiclinks))
     app.add_handler(CommandHandler("delch",delch)); app.add_handler(CommandHandler("delchat",delch))
     app.add_handler(CommandHandler("channels",channels)); app.add_handler(CommandHandler("channelpanel",channelpanel))
     app.add_handler(CommandHandler("genlink",genlink)); app.add_handler(CommandHandler("bulklink",bulklink)); app.add_handler(CommandHandler("links",links))
