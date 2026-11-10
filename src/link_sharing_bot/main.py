@@ -11,6 +11,7 @@ from .handlers.links import add_link_handlers
 from .errors import error_handler
 from .branding import close_branded_message
 from .backup import add_backup_handlers
+from .broadcast import add_broadcast_handlers
 
 async def post_init(app):
     s=app.bot_data["settings"]
@@ -28,10 +29,17 @@ async def post_init(app):
            error_detail=COALESCE(error_detail,'Worker restarted while job was processing; outcome requires review.'),
            finished_at=NOW() WHERE clone_id=$1 AND status='processing'""",
         s.clone_id)
+    await db.require().execute(
+        """UPDATE bot_broadcasts SET status='failed',
+           error_detail=COALESCE(error_detail,'Worker restarted during delivery; recipient outcome is unknown.'),
+           finished_at=NOW() WHERE clone_id=$1 AND status='processing'""",
+        s.clone_id)
     if app.job_queue is None:
-        raise RuntimeError("PTB JobQueue is required for durable scheduled-link processing.")
+        raise RuntimeError("PTB JobQueue is required for durable scheduled links and broadcasts.")
     from .handlers.links import scheduled_link_worker
     app.job_queue.run_repeating(scheduled_link_worker, interval=5, first=2, name="durable-scheduled-links")
+    from .broadcast import broadcast_worker
+    app.job_queue.run_repeating(broadcast_worker, interval=10, first=4, name="scheduled-broadcasts")
 
 async def post_shutdown(app):
     db=app.bot_data.get("db")
@@ -45,7 +53,7 @@ def main():
         "image_url":settings.branding_image_url,"image_path":settings.branding_image_path,"small_caps":settings.small_caps,"channel_url":os.getenv("CHANNEL_URL","").strip(),
         "defaults":DEFAULT_MESSAGES,"product":"link"})
     app.add_handler(CallbackQueryHandler(close_branded_message, pattern=r"^branding:close$"), group=-1)
-    add_common_handlers(app); add_editor_handlers(app); add_link_handlers(app); add_backup_handlers(app); app.add_error_handler(error_handler)
+    add_common_handlers(app); add_editor_handlers(app); add_link_handlers(app); add_backup_handlers(app); add_broadcast_handlers(app); app.add_error_handler(error_handler)
     app.run_polling(allowed_updates=["message","callback_query","chat_join_request"])
 
 if __name__=="__main__": main()
