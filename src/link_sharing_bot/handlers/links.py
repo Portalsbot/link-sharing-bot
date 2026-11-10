@@ -401,11 +401,13 @@ async def add_fsub(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         try:
             cid=int(context.args[0])
-            await context.bot.get_chat(cid)
+            chat = await context.bot.get_chat(cid)
             me = await context.bot.get_me()
             member = await context.bot.get_chat_member(cid, me.id)
             if getattr(member, "status", "") not in {"administrator", "creator"}:
                 raise PermissionError("Bot must be an administrator in each FSub channel to verify membership.")
+            if not getattr(chat, "username", None) and not getattr(member, "can_invite_users", False):
+                raise PermissionError("For private FSub channels, the bot also needs can_invite_users permission to create a join link.")
             await context.application.bot_data["db"].require().execute(
                 "INSERT INTO link_fsub_channels(clone_id,channel_id,mode) VALUES($1,$2,$3) ON CONFLICT(clone_id,channel_id) DO UPDATE SET mode=EXCLUDED.mode",
                 context.application.bot_data["clone_id"],cid,context.args[1].lower())
