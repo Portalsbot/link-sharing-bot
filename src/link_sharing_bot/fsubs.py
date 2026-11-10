@@ -89,10 +89,18 @@ async def _missing_channels(context, user_id: int):
                 if getattr(chat, "username", None):
                     join_url = f"https://t.me/{chat.username}"
                 else:
-                    invite = await context.bot.create_chat_invite_link(channel_id)
+                    request_mode = row["mode"] == "request"
+                    invite = await context.bot.create_chat_invite_link(
+                        channel_id, creates_join_request=request_mode)
                     join_url = invite.invite_link
             except TelegramError:
                 join_url = None
+            if join_url:
+                await context.application.bot_data["db"].require().execute(
+                    """UPDATE link_fsub_channels SET title=COALESCE(title,$1),join_url=COALESCE(join_url,$2)
+                       WHERE clone_id=$3 AND channel_id=$4""",
+                    str(row["title"]), join_url,
+                    context.application.bot_data["clone_id"], channel_id)
         missing.append((channel_id, str(row["title"]), join_url))
     return missing
 
