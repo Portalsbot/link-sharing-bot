@@ -5,7 +5,7 @@ from telegram.ext import ApplicationBuilder, CallbackQueryHandler
 from .config import Settings
 from .database import Database
 from .defaults import DEFAULT_MESSAGES
-from .settings import add_common_handlers
+from .settings import add_common_handlers, configure_command_menu
 from .message_editor.handlers import add_editor_handlers
 from .handlers.links import add_link_handlers
 from .errors import error_handler
@@ -23,6 +23,7 @@ async def post_init(app):
     for migration_file in migration_files:
         await db.init_schema(migration_file.read_text(encoding="utf-8"))
     app.bot_data["db"]=db
+    await configure_command_menu(app)
     # Never replay a job whose external Telegram action may already have happened before a crash.
     await db.require().execute(
         """UPDATE link_scheduled_jobs SET status='failed',
