@@ -452,6 +452,16 @@ async def reqtime(update: Update, context: ContextTypes.DEFAULT_TYPE):
             body=f"Global request delay set to {delay} seconds."
     await reply(update, context, body)
 
+async def _record_join_status(db, data, status):
+    await db.require().execute(
+        """INSERT INTO link_join_events(clone_id,channel_id,user_id,event_status) VALUES($1,$2,$3,$4)""",
+        data["clone_id"], data["channel_id"], data["user_id"], status)
+    await db.require().execute(
+        """UPDATE link_pending_join_requests SET status=$1,updated_at=NOW()
+           WHERE clone_id=$2 AND channel_id=$3 AND user_id=$4""",
+        status, data["clone_id"], data["channel_id"], data["user_id"])
+
+
 async def _approve_join_request(context, data):
     db = context.application.bot_data["db"]
     try:
@@ -460,9 +470,7 @@ async def _approve_join_request(context, data):
     except Exception as exc:
         log.warning("Join request approval failed: %s", type(exc).__name__)
         status = "failed"
-    await db.require().execute(
-        "INSERT INTO link_join_events(clone_id,channel_id,user_id,event_status) VALUES($1,$2,$3,$4)",
-        data["clone_id"], data["channel_id"], data["user_id"], status)
+    await _record_join_status(db, data, status)
 
 
 async def _approve_join_request_job(context: ContextTypes.DEFAULT_TYPE):
@@ -472,22 +480,73 @@ async def _approve_join_request_job(context: ContextTypes.DEFAULT_TYPE):
 async def handle_join_request(update: Update, context: ContextTypes.DEFAULT_TYPE):
     req = update.chat_join_request
     clone_id = context.application.bot_data["clone_id"]
-    row = await context.application.bot_data["db"].require().fetchrow(
+    db = context.application.bot_data["db"]
+    data = {"clone_id": clone_id, "channel_id": req.chat.id, "user_id": req.from_user.id}
+    await db.require().execute(
+        """INSERT INTO link_pending_join_requests(clone_id,channel_id,user_id,status)
+           VALUES($1,$2,$3,'pending')
+           ON CONFLICT(clone_id,channel_id,user_id) DO UPDATE SET
+           requested_at=NOW(),status='pending',updated_at=NOW()""",
+        clone_id, req.chat.id, req.from_user.id)
+    row = await db.require().fetchrow(
         "SELECT approval_enabled,approval_delay_seconds FROM link_channels WHERE clone_id=$1 AND channel_id=$2",
         clone_id, req.chat.id)
     if not row or not row["approval_enabled"]:
         return
-    setting = await context.application.bot_data["db"].require().fetchrow(
+    setting = await db.require().fetchrow(
         "SELECT setting_value FROM link_settings WHERE clone_id=$1 AND setting_key='reqmode'", clone_id)
     if setting and setting["setting_value"] == "off":
         return
-    data = {"clone_id": clone_id, "channel_id": req.chat.id, "user_id": req.from_user.id}
     delay = int(row["approval_delay_seconds"])
     if delay:
         context.job_queue.run_once(_approve_join_request_job, when=delay, data=data,
                                    name=f"approve-{clone_id}-{req.chat.id}-{req.from_user.id}")
     else:
         await _approve_join_request(context, data)
+
+
+async def joinrequests(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_admin(update, context): return
+    rows = await context.application.bot_data["db"].require().fetch(
+        """SELECT channel_id,user_id,requested_at FROM link_pending_join_requests
+           WHERE clone_id=$1 AND status='pending' ORDER BY requested_at LIMIT 40""",
+        context.application.bot_data["clone_id"])
+    body = "**ᴘᴇɴᴅɪɴɢ ᴊᴏɪɴ ʀᴇǫᴜᴇsᴛs**\\n\\n" + (
+        "\\n".join(f"Channel {row['channel_id']} · User {row['user_id']} · {row['requested_at']}" for row in rows)
+        if rows else "No pending requests.")
+    await reply(update, context, body)
+
+
+async def approve_request(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_admin(update, context): return
+    if len(context.args) != 2 or not all(x.lstrip("-").isdigit() for x in context.args):
+        body = "Usage: /approve USER_ID CHANNEL_ID"
+    else:
+        user_id, channel_id = int(context.args[0]), int(context.args[1])
+        data = {"clone_id": context.application.bot_data["clone_id"], "channel_id": channel_id, "user_id": user_id}
+        try:
+            await context.bot.approve_chat_join_request(channel_id, user_id)
+            await _record_join_status(context.application.bot_data["db"], data, "approved")
+            body = f"Join request approved for user {user_id} in channel {channel_id}."
+        except Exception as exc:
+            body = f"Approval failed: {type(exc).__name__}. The request may no longer be pending."
+    await reply(update, context, body)
+
+
+async def decline_request(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_admin(update, context): return
+    if len(context.args) != 2 or not all(x.lstrip("-").isdigit() for x in context.args):
+        body = "Usage: /decline USER_ID CHANNEL_ID"
+    else:
+        user_id, channel_id = int(context.args[0]), int(context.args[1])
+        data = {"clone_id": context.application.bot_data["clone_id"], "channel_id": channel_id, "user_id": user_id}
+        try:
+            await context.bot.decline_chat_join_request(channel_id, user_id)
+            await _record_join_status(context.application.bot_data["db"], data, "declined")
+            body = f"Join request declined for user {user_id} in channel {channel_id}."
+        except Exception as exc:
+            body = f"Decline failed: {type(exc).__name__}. The request may no longer be pending."
+    await reply(update, context, body)
 
 async def shorten(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not is_admin(update, context): return
@@ -681,4 +740,5 @@ def add_link_handlers(app):
     app.add_handler(CommandHandler("shorten",shorten)); app.add_handler(CommandHandler("set_api",set_api)); app.add_handler(CommandHandler("shortnerstatus",shortnerstatus)); app.add_handler(CommandHandler("shortnerstats",shortnerstats)); app.add_handler(CommandHandler("linkhistory",linkhistory))
     app.add_handler(CommandHandler("channelstats",channelstats)); app.add_handler(CommandHandler("schedulelink",schedulelink)); app.add_handler(CommandHandler("scheduledlinks",scheduledlinks)); app.add_handler(CommandHandler("cancelschedule",cancelschedule))
     app.add_handler(CallbackQueryHandler(check_fsub_callback, pattern=r"^fsub:check:"))
+    app.add_handler(CommandHandler("joinrequests",joinrequests)); app.add_handler(CommandHandler("approve",approve_request)); app.add_handler(CommandHandler("decline",decline_request))
     app.add_handler(ChatJoinRequestHandler(handle_join_request))
