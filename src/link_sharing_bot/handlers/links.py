@@ -409,6 +409,10 @@ async def add_fsub(update: Update, context: ContextTypes.DEFAULT_TYPE):
             if not getattr(chat, "username", None) and not getattr(member, "can_invite_users", False):
                 raise PermissionError("For private FSub channels, the bot also needs can_invite_users permission to create a join link.")
             await context.application.bot_data["db"].require().execute(
+                """INSERT INTO link_channels(clone_id,channel_id,title,approval_enabled)
+                   VALUES($1,$2,$3,FALSE) ON CONFLICT(clone_id,channel_id) DO NOTHING""",
+                context.application.bot_data["clone_id"], cid, chat.title or str(cid))
+            await context.application.bot_data["db"].require().execute(
                 "INSERT INTO link_fsub_channels(clone_id,channel_id,mode) VALUES($1,$2,$3) ON CONFLICT(clone_id,channel_id) DO UPDATE SET mode=EXCLUDED.mode",
                 context.application.bot_data["clone_id"],cid,context.args[1].lower())
             body="Force-sub channel added. Ensure the bot can verify membership."
