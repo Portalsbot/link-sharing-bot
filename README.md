@@ -101,3 +101,5 @@ Provider-specific shortener response formats may require an adapter. The generic
 ## Web-service health check
 
 When deploying as a web service, the platform-provided `PORT` variable starts a lightweight HTTP server. Configure the platform health-check path as `/health`. This endpoint reports process liveness; use `/diagnostics` in Telegram to verify Telegram API, PostgreSQL and JobQueue connectivity.
+
+Broadcast text or media captions can include URL buttons with one line per button: `[button] LABEL | https://URL`. The bot shows a preview before immediate or scheduled delivery.
