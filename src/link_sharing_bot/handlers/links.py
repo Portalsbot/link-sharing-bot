@@ -635,10 +635,103 @@ async def shortnerstats(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def linkhistory(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not is_admin(update, context): return
-    rows=await context.application.bot_data["db"].require().fetch(
-        "SELECT original_url,shortened_url,status,created_at FROM link_shortener_events WHERE clone_id=$1 ORDER BY id DESC LIMIT 15",context.application.bot_data["clone_id"])
-    body="**ʟɪɴᴋ ʜɪsᴛᴏʀʏ**\n\n"+("\n".join(f"{r['status']} · {r['original_url'][:90]}" for r in rows) if rows else "No history.")
+    if context.args and not context.args[0].lstrip("-").isdigit():
+        body = "Usage: /linkhistory [CHANNEL_ID]"
+    else:
+        args = [context.application.bot_data["clone_id"]]
+        sql = """SELECT id,channel_id,invite_link,request_link,expire_at,revoked,created_at
+                 FROM link_invites WHERE clone_id=$1"""
+        if context.args:
+            sql += " AND channel_id=$2"
+            args.append(int(context.args[0]))
+        sql += " ORDER BY id DESC LIMIT 30"
+        rows = await context.application.bot_data["db"].require().fetch(sql, *args)
+        body = "**ɪɴᴠɪᴛᴇ ʟɪɴᴋ ʜɪsᴛᴏʀʏ**\n\n" + (
+            "\n".join(f"#{row['id']} · {row['channel_id']} · {'revoked' if row['revoked'] else 'active/expired'} · expires {row['expire_at']} · {row['invite_link']}"
+                        for row in rows) if rows else "No invitation history.")
     await reply(update, context, body)
+
+
+async def shortenerhistory(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_admin(update, context): return
+    rows = await context.application.bot_data["db"].require().fetch(
+        "SELECT original_url,shortened_url,status,created_at FROM link_shortener_events WHERE clone_id=$1 ORDER BY id DESC LIMIT 20",
+        context.application.bot_data["clone_id"])
+    body = "**sʜᴏʀᴛᴇɴᴇʀ ʜɪsᴛᴏʀʏ**\n\n" + (
+        "\n".join(f"{row['status']} · {row['original_url'][:90]} · {row['shortened_url'] or ''}" for row in rows)
+        if rows else "No shortener history.")
+    await reply(update, context, body)
+
+
+async def revokelink(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_admin(update, context): return
+    if len(context.args) != 1 or not context.args[0].isdigit():
+        body = "Usage: /revokelink INVITE_ID"
+    else:
+        db = context.application.bot_data["db"].require()
+        row = await db.fetchrow(
+            "SELECT channel_id,invite_link,revoked FROM link_invites WHERE clone_id=$1 AND id=$2",
+            context.application.bot_data["clone_id"], int(context.args[0]))
+        if not row:
+            body = "Invitation record not found."
+        elif row["revoked"]:
+            body = "This invitation is already marked revoked."
+        else:
+            try:
+                await context.bot.revoke_chat_invite_link(int(row["channel_id"]), row["invite_link"])
+                await db.execute("UPDATE link_invites SET revoked=TRUE WHERE clone_id=$1 AND id=$2",
+                                 context.application.bot_data["clone_id"], int(context.args[0]))
+                body = "Telegram invitation revoked."
+            except Exception as exc:
+                body = f"Telegram could not revoke this invitation: {type(exc).__name__}."
+    await reply(update, context, body)
+
+
+async def renewlink(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_admin(update, context): return
+    if len(context.args) != 1 or not context.args[0].isdigit():
+        body = "Usage: /renewlink INVITE_ID"
+    else:
+        row = await context.application.bot_data["db"].require().fetchrow(
+            "SELECT channel_id,request_link FROM link_invites WHERE clone_id=$1 AND id=$2",
+            context.application.bot_data["clone_id"], int(context.args[0]))
+        if not row:
+            body = "Invitation record not found."
+        else:
+            try:
+                url, expires = await genlink_for_channel(
+                    context, int(row["channel_id"]), update.effective_user.id, bool(row["request_link"]))
+                body = f"New invitation created. The previous invite remains unchanged.\n{url}\nExpires: {expires.isoformat()}"
+            except Exception as exc:
+                body = f"Could not create a replacement invitation: {type(exc).__name__}."
+    await reply(update, context, body)
+
+
+async def bulkrenew(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_admin(update, context): return
+    if not context.args or not all(value.isdigit() for value in context.args):
+        body = "Usage: /bulkrenew INVITE_ID INVITE_ID ..."
+    else:
+        ids = list(dict.fromkeys(int(value) for value in context.args))
+        if len(ids) > 20:
+            body = "A maximum of 20 invitations can be renewed per request."
+        else:
+            db = context.application.bot_data["db"].require()
+            rows = await db.fetch(
+                "SELECT id,channel_id,request_link FROM link_invites WHERE clone_id=$1 AND id=ANY($2::bigint[]) ORDER BY id",
+                context.application.bot_data["clone_id"], ids)
+            results = []
+            for row in rows:
+                try:
+                    url, expires = await genlink_for_channel(
+                        context, int(row["channel_id"]), update.effective_user.id, bool(row["request_link"]))
+                    results.append(f"#{row['id']} · {url} · {expires.isoformat()}")
+                except Exception as exc:
+                    results.append(f"#{row['id']} · FAILED ({type(exc).__name__})")
+            body = f"Created replacements for {len(rows)} of {len(ids)} records. Previous invites were not modified.\n\n" + ("\n".join(results) if results else "No matching invitations.")
+    await reply(update, context, body)
+
+
 
 async def channelstats(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not is_admin(update,context): return
@@ -928,7 +1021,7 @@ def add_link_handlers(app):
     app.add_handler(CommandHandler("revoke_links",revoke_links)); app.add_handler(CommandHandler("bulkexpire",bulkexpire))
     app.add_handler(CommandHandler("setapproval",setapproval)); app.add_handler(CommandHandler("reqmode",reqmode)); app.add_handler(CommandHandler("reqtime",reqtime))
     app.add_handler(CommandHandler("add_fsub",add_fsub)); app.add_handler(CommandHandler("del_fsub",del_fsub)); app.add_handler(CommandHandler("fsub",fsub))
-    app.add_handler(CommandHandler("shorten",shorten)); app.add_handler(CommandHandler("set_api",set_api)); app.add_handler(CommandHandler("setshortener",set_api)); app.add_handler(CommandHandler("shortnerstatus",shortnerstatus)); app.add_handler(CommandHandler("shortenerhealth",shortnerstatus)); app.add_handler(CommandHandler("shortnerstats",shortnerstats)); app.add_handler(CommandHandler("shortenerstats",shortnerstats)); app.add_handler(CommandHandler("linkhistory",linkhistory))
+    app.add_handler(CommandHandler("shorten",shorten)); app.add_handler(CommandHandler("set_api",set_api)); app.add_handler(CommandHandler("setshortener",set_api)); app.add_handler(CommandHandler("shortnerstatus",shortnerstatus)); app.add_handler(CommandHandler("shortenerhealth",shortnerstatus)); app.add_handler(CommandHandler("shortnerstats",shortnerstats)); app.add_handler(CommandHandler("shortenerstats",shortnerstats)); app.add_handler(CommandHandler("linkhistory",linkhistory)); app.add_handler(CommandHandler("shortenerhistory",shortenerhistory)); app.add_handler(CommandHandler("revokelink",revokelink)); app.add_handler(CommandHandler("renewlink",renewlink)); app.add_handler(CommandHandler("bulkrenew",bulkrenew))
     app.add_handler(CommandHandler("channelstats",channelstats)); app.add_handler(CommandHandler("schedulelink",schedulelink)); app.add_handler(CommandHandler("scheduledlinks",scheduledlinks)); app.add_handler(CommandHandler("cancelschedule",cancelschedule))
     app.add_handler(CommandHandler("apiusage",apiusage)); app.add_handler(CommandHandler("requeststats",requeststats)); app.add_handler(CommandHandler("requesthistory",requesthistory)); app.add_handler(CommandHandler("linkstats",linkstats))
     app.add_handler(CommandHandler("users",users)); app.add_handler(CommandHandler("userinfo",userinfo)); app.add_handler(CommandHandler("blockuser",blockuser)); app.add_handler(CommandHandler("unblockuser",unblockuser)); app.add_handler(CommandHandler("stats",stats)); app.add_handler(CommandHandler("logs",logs))
