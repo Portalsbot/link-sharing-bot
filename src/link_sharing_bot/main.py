@@ -3,7 +3,7 @@ import os
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from telegram.ext import ApplicationBuilder, CallbackQueryHandler
+from telegram.ext import ApplicationBuilder, CallbackQueryHandler, MessageHandler, filters
 from .config import Settings
 from .database import Database
 from .defaults import DEFAULT_MESSAGES
