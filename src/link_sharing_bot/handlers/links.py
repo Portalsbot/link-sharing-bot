@@ -30,11 +30,18 @@ def _public_slug(channel_id: int) -> str:
 async def open_public_entry(update: Update, context, slug: str) -> bool:
     db = context.application.bot_data["db"]
     row = await db.require().fetchrow(
-        "SELECT id,kind,channel_id,target_url,title FROM link_public_entries WHERE clone_id=$1 AND slug=$2 AND is_active=TRUE",
+        "SELECT id,kind,channel_id,target_url,title,is_active FROM link_public_entries WHERE clone_id=$1 AND slug=$2",
         context.application.bot_data["clone_id"], slug,
     )
     if not row:
         return False
+    if not row["is_active"]:
+        await send_branded(context.bot, update.effective_chat.id,
+            "ᴛʜɪs ᴘᴜʙʟɪᴄ ʟɪɴᴋ ʜᴀs ʙᴇᴇɴ ᴅɪsᴀʙʟᴇᴅ ʙʏ ɪᴛs ᴏᴡɴᴇʀ.",
+            image_url=context.application.bot_data["image_url"],
+            image_path=context.application.bot_data["image_path"],
+            small_caps=context.application.bot_data["small_caps"])
+        return True
     if row["kind"] == "channel":
         try:
             url, expires = await genlink_for_channel(context, int(row["channel_id"]), update.effective_user.id)
