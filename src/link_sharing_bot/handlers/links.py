@@ -498,6 +498,10 @@ async def handle_join_request(update: Update, context: ContextTypes.DEFAULT_TYPE
     if setting and setting["setting_value"] == "off":
         return
     delay = int(row["approval_delay_seconds"])
+    if not delay:
+        global_delay = await db.require().fetchrow(
+            "SELECT setting_value FROM link_settings WHERE clone_id=$1 AND setting_key='reqtime'", clone_id)
+        delay = int(global_delay["setting_value"]) if global_delay else 0
     if delay:
         context.job_queue.run_once(_approve_join_request_job, when=delay, data=data,
                                    name=f"approve-{clone_id}-{req.chat.id}-{req.from_user.id}")
