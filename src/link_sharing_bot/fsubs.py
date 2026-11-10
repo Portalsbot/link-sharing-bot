@@ -158,9 +158,9 @@ async def _show_remove_list(context, chat_id: int, offset: int = 0):
 
 
 async def _back_to_settings(query, context):
-    from .settings import start
+    from .settings import settings as show_settings
     synthetic = SimpleNamespace(effective_chat=query.message.chat, effective_user=query.from_user)
-    await start(synthetic, context)
+    await show_settings(synthetic, context)
 
 
 async def fsubs_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
