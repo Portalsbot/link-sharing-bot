@@ -7,9 +7,11 @@ from link_sharing_bot.backup import add_backup_handlers
 from link_sharing_bot.broadcast import add_broadcast_handlers
 from link_sharing_bot.branding_config import IMAGE_URL
 
+from link_sharing_bot.fsubs import add_fsubs_handlers
 
 def test_runtime_imports_and_branding():
     assert callable(main)
+    assert callable(add_fsubs_handlers)
     assert all(callable(fn) for fn in (
         open_public_entry, schedulelink, scheduled_link_worker, check_fsub_callback,
         checkduplicate, editlink, requeststats, diagnostics, linkhistory, renewlink, bulkrenew,
