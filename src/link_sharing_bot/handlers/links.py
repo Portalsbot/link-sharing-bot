@@ -99,15 +99,33 @@ async def newlink(update: Update, context: ContextTypes.DEFAULT_TYPE):
             import secrets
             slug = "url_" + secrets.token_urlsafe(9)
             title = " ".join(context.args[1:]).strip() or "Saved link"
-            await context.application.bot_data["db"].require().execute(
+            entry = await context.application.bot_data["db"].require().fetchrow(
                 """INSERT INTO link_public_entries(clone_id,slug,kind,target_url,title,created_by,is_active)
-                   VALUES($1,$2,'external',$3,$4,$5,TRUE)""",
+                   VALUES($1,$2,'external',$3,$4,$5,TRUE) RETURNING id""",
                 context.application.bot_data["clone_id"], slug, url, title, update.effective_user.id)
             me = await context.bot.get_me()
             public_url = f"https://t.me/{me.username}?start={slug}"
-            body = f"Permanent bot link created for {title}:\\n{public_url}\\n\\nThe destination URL is stored unchanged and will not be auto-expired by this bot."
+            body = f"Permanent bot link created · Entry ID: {entry['id']} · {title}:\\n{public_url}\\n\\nThe destination URL is stored unchanged and will not be auto-expired by this bot."
     await reply(update, context, body)
 
+
+
+
+async def publiclinks(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_admin(update, context): return
+    rows = await context.application.bot_data["db"].require().fetch(
+        """SELECT id,kind,title,slug,is_active,channel_id,target_url FROM link_public_entries
+           WHERE clone_id=$1 ORDER BY id DESC LIMIT 50""", context.application.bot_data["clone_id"])
+    if not rows:
+        body = "No public bot-link entries have been created."
+    else:
+        lines = []
+        for row in rows:
+            state = "active" if row["is_active"] else "disabled"
+            target = f"channel {row['channel_id']}" if row["kind"] == "channel" else "saved external URL"
+            lines.append(f"#{row['id']} · {row['title']} · {target} · {state}")
+        body = "**ᴘᴜʙʟɪᴄ ʙᴏᴛ ʟɪɴᴋs**\\n\\n" + "\\n".join(lines)
+    await reply(update, context, body)
 
 async def deletelink(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not is_admin(update, context): return
@@ -142,10 +160,14 @@ async def delch(update: Update, context: ContextTypes.DEFAULT_TYPE):
         body = "Usage: `/delch CHANNEL_ID`"
     else:
         try:
+            cid = int(context.args[0])
             result = await context.application.bot_data["db"].require().execute(
                 "DELETE FROM link_channels WHERE clone_id=$1 AND channel_id=$2",
-                context.application.bot_data["clone_id"], int(context.args[0]))
-            body = "Channel removed." if result.endswith("1") else "Channel not found."
+                context.application.bot_data["clone_id"], cid)
+            await context.application.bot_data["db"].require().execute(
+                "UPDATE link_public_entries SET is_active=FALSE WHERE clone_id=$1 AND kind='channel' AND channel_id=$2",
+                context.application.bot_data["clone_id"], cid)
+            body = "Channel removed and its permanent public bot entry disabled. Previously issued Telegram invites are not automatically revoked." if result.endswith("1") else "Channel not found."
         except ValueError: body = "Channel ID must be numeric."
     await reply(update, context, body)
 
@@ -436,7 +458,7 @@ async def channelpanel(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 def add_link_handlers(app):
     app.add_handler(CommandHandler("addch",addch)); app.add_handler(CommandHandler("addchat",addch))
-    app.add_handler(CommandHandler("newlink",newlink)); app.add_handler(CommandHandler("deletelink",deletelink)); app.add_handler(CommandHandler("setttl",setttl))
+    app.add_handler(CommandHandler("newlink",newlink)); app.add_handler(CommandHandler("deletelink",deletelink)); app.add_handler(CommandHandler("setttl",setttl)); app.add_handler(CommandHandler("publiclinks",publiclinks))
     app.add_handler(CommandHandler("delch",delch)); app.add_handler(CommandHandler("delchat",delch))
     app.add_handler(CommandHandler("channels",channels)); app.add_handler(CommandHandler("channelpanel",channelpanel))
     app.add_handler(CommandHandler("genlink",genlink)); app.add_handler(CommandHandler("bulklink",bulklink)); app.add_handler(CommandHandler("links",links))
