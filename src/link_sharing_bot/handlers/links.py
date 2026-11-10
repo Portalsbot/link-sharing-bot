@@ -489,6 +489,7 @@ async def handle_join_request(update: Update, context: ContextTypes.DEFAULT_TYPE
         await _approve_join_request(context, data)
 
 async def shorten(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_admin(update, context): return
     if not context.args:
         body="Usage: `/shorten https://example.com/long-url`"
     else:
