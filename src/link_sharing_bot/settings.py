@@ -1,19 +1,27 @@
 """Shared settings and branded command registration."""
-from telegram import Update
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes, CommandHandler
 from .branding import send_branded, keyboard_from_buttons
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     key = "file.start" if context.application.bot_data["product"] == "file" else "link.start"
-    body = await context.application.bot_data["db"].get_text(
-        context.application.bot_data["clone_id"], key,
-        context.application.bot_data["defaults"].get(key, "ᴡᴇʟᴄᴏᴍᴇ!"),
-    )
     await context.application.bot_data["db"].require().execute(
         """INSERT INTO bot_users(clone_id,user_id) VALUES($1,$2)
            ON CONFLICT(clone_id,user_id) DO UPDATE SET last_seen=NOW()""",
         context.application.bot_data["clone_id"], update.effective_user.id,
+    )
+
+    # A public bot deep link is permanent. Only the fresh channel invite
+    # generated after this /start receives the configured Telegram expiry.
+    if context.application.bot_data["product"] == "link" and context.args:
+        from .handlers.links import open_public_entry
+        if await open_public_entry(update, context, context.args[0]):
+            return
+
+    body = await context.application.bot_data["db"].get_text(
+        context.application.bot_data["clone_id"], key,
+        context.application.bot_data["defaults"].get(key, "ᴡᴇʟᴄᴏᴍᴇ!"),
     )
     rows = await context.application.bot_data["db"].get_buttons(context.application.bot_data["clone_id"], key)
     markup = keyboard_from_buttons(rows, small_caps=context.application.bot_data["small_caps"])
@@ -59,9 +67,9 @@ async def ping(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def settings(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    body = ("**sᴇᴛᴛɪɴɢs**\n\n"
-            "/texts — edit messages\n/buttons TEMPLATE_KEY — manage inline buttons\n"
-            "/dlt_time SECONDS — set delivery auto-delete (File Sharing)\n"
+    body = ("**sᴇᴛᴛɪɴɢs**\\n\\n"
+            "/texts — edit messages\\n/buttons TEMPLATE_KEY — manage inline buttons\\n"
+            "/dlt_time SECONDS — set delivery auto-delete (File Sharing)\\n"
             "/help — command guide")
     await send_branded(context.bot, update.effective_chat.id, body,
                        image_url=context.application.bot_data["image_url"],
