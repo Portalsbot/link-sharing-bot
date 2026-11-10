@@ -692,8 +692,9 @@ async def renewlink(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if len(context.args) != 1 or not context.args[0].isdigit():
         body = "Usage: /renewlink INVITE_ID"
     else:
-        row = await context.application.bot_data["db"].require().fetchrow(
-            "SELECT channel_id,request_link FROM link_invites WHERE clone_id=$1 AND id=$2",
+        db = context.application.bot_data["db"].require()
+        row = await db.fetchrow(
+            "SELECT channel_id,request_link,invite_link,revoked FROM link_invites WHERE clone_id=$1 AND id=$2",
             context.application.bot_data["clone_id"], int(context.args[0]))
         if not row:
             body = "Invitation record not found."
@@ -701,7 +702,16 @@ async def renewlink(update: Update, context: ContextTypes.DEFAULT_TYPE):
             try:
                 url, expires = await genlink_for_channel(
                     context, int(row["channel_id"]), update.effective_user.id, bool(row["request_link"]))
-                body = f"New invitation created. The previous invite remains unchanged.\n{url}\nExpires: {expires.isoformat()}"
+                old_status = "already revoked"
+                if not row["revoked"]:
+                    try:
+                        await context.bot.revoke_chat_invite_link(int(row["channel_id"]), row["invite_link"])
+                        await db.execute("UPDATE link_invites SET revoked=TRUE WHERE clone_id=$1 AND id=$2",
+                                         context.application.bot_data["clone_id"], int(context.args[0]))
+                        old_status = "previous invitation revoked"
+                    except Exception:
+                        old_status = "previous invitation could not be revoked; it remains valid until its own expiry"
+                body = f"Replacement invitation created; {old_status}.\n{url}\nExpires: {expires.isoformat()}"
             except Exception as exc:
                 body = f"Could not create a replacement invitation: {type(exc).__name__}."
     await reply(update, context, body)
@@ -718,295 +728,28 @@ async def bulkrenew(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
             db = context.application.bot_data["db"].require()
             rows = await db.fetch(
-                "SELECT id,channel_id,request_link FROM link_invites WHERE clone_id=$1 AND id=ANY($2::bigint[]) ORDER BY id",
+                "SELECT id,channel_id,request_link,invite_link,revoked FROM link_invites WHERE clone_id=$1 AND id=ANY($2::bigint[]) ORDER BY id",
                 context.application.bot_data["clone_id"], ids)
             results = []
             for row in rows:
                 try:
                     url, expires = await genlink_for_channel(
                         context, int(row["channel_id"]), update.effective_user.id, bool(row["request_link"]))
-                    results.append(f"#{row['id']} · {url} · {expires.isoformat()}")
+                    old_status = "already revoked"
+                    if not row["revoked"]:
+                        try:
+                            await context.bot.revoke_chat_invite_link(int(row["channel_id"]), row["invite_link"])
+                            await db.execute("UPDATE link_invites SET revoked=TRUE WHERE clone_id=$1 AND id=$2",
+                                             context.application.bot_data["clone_id"], row["id"])
+                            old_status = "old invite revoked"
+                        except Exception:
+                            old_status = "old invite could not be revoked"
+                    results.append(f"#{row['id']} · {url} · {expires.isoformat()} · {old_status}")
                 except Exception as exc:
                     results.append(f"#{row['id']} · FAILED ({type(exc).__name__})")
-            body = f"Created replacements for {len(rows)} of {len(ids)} records. Previous invites were not modified.\n\n" + ("\n".join(results) if results else "No matching invitations.")
+            body = f"Processed {len(rows)} of {len(ids)} records.\n\n" + ("\n".join(results) if results else "No matching invitations.")
     await reply(update, context, body)
 
-
-
-async def channelstats(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not is_admin(update,context): return
-    if not context.args: body="Usage: `/channelstats CHANNEL_ID`"
-    else:
-        cid=int(context.args[0]); row=await context.application.bot_data["db"].require().fetchrow(
-            "SELECT COUNT(*) total,COUNT(*) FILTER(WHERE event_status='approved') approved,COUNT(*) FILTER(WHERE event_status='failed') failed FROM link_join_events WHERE clone_id=$1 AND channel_id=$2",context.application.bot_data["clone_id"],cid)
-        body=f"**ᴄʜᴀɴɴᴇʟ ᴊᴏɪɴ sᴛᴀᴛs**\nChannel: `{cid}`\nTotal: {row['total']}\nApproved: {row['approved']}\nFailed: {row['failed']}"
-    await reply(update,context,body)
-
-async def schedulelink(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not is_admin(update, context):
-        return
-    if len(context.args) < 2:
-        body = "Usage: /schedulelink CHANNEL_ID YYYY-MM-DDTHH:MM:SS+05:30 [request]"
-    else:
-        try:
-            channel_id = int(context.args[0])
-            when = datetime.fromisoformat(context.args[1])
-            if when.tzinfo is None:
-                raise ValueError("Include a timezone offset, for example +05:30.")
-            delay = (when - datetime.now(when.tzinfo)).total_seconds()
-            if delay <= 0 or delay > 30 * 86400:
-                raise ValueError("Choose a time within the next 30 days.")
-            exists = await context.application.bot_data["db"].require().fetchval(
-                "SELECT 1 FROM link_channels WHERE clone_id=$1 AND channel_id=$2",
-                context.application.bot_data["clone_id"], channel_id)
-            if not exists:
-                raise ValueError("Register the channel with /addch first.")
-            request_mode = "request" in [item.lower() for item in context.args[2:]]
-            row = await context.application.bot_data["db"].require().fetchrow(
-                """INSERT INTO link_scheduled_jobs
-                   (clone_id,channel_id,user_id,request_mode,scheduled_at)
-                   VALUES($1,$2,$3,$4,$5) RETURNING id""",
-                context.application.bot_data["clone_id"], channel_id,
-                update.effective_user.id, request_mode, when)
-            body = f"Scheduled invitation job #{row['id']} for {when.isoformat()}. It is stored in PostgreSQL and survives bot restarts."
-        except Exception as exc:
-            body = f"Could not schedule invitation: {str(exc)[:180]}"
-    await reply(update, context, body)
-
-
-async def scheduled_link_worker(context: ContextTypes.DEFAULT_TYPE):
-    db = context.application.bot_data["db"]
-    clone_id = context.application.bot_data["clone_id"]
-    while True:
-        async with db.require().acquire() as conn:
-            async with conn.transaction():
-                job = await conn.fetchrow(
-                    """SELECT id,channel_id,user_id,request_mode FROM link_scheduled_jobs
-                       WHERE clone_id=$1 AND status='pending' AND scheduled_at<=NOW()
-                       ORDER BY scheduled_at,id FOR UPDATE SKIP LOCKED LIMIT 1""",
-                    clone_id)
-                if not job:
-                    return
-                await conn.execute(
-                    "UPDATE link_scheduled_jobs SET status='processing' WHERE id=$1", job["id"])
-        try:
-            url, expires = await genlink_for_channel(
-                context, int(job["channel_id"]), int(job["user_id"]), bool(job["request_mode"]))
-            await send_branded(
-                context.bot, int(job["user_id"]),
-                f"Your scheduled channel invitation is ready:\n{url}\nExpires: {expires.isoformat()}",
-                image_url=context.application.bot_data["image_url"],
-                image_path=context.application.bot_data["image_path"],
-                small_caps=context.application.bot_data["small_caps"])
-            await db.require().execute(
-                """UPDATE link_scheduled_jobs SET status='completed',invite_url=$1,finished_at=NOW()
-                   WHERE id=$2""", url, job["id"])
-        except Exception as exc:
-            log.exception("Scheduled invitation job %s failed", job["id"])
-            await db.require().execute(
-                """UPDATE link_scheduled_jobs SET status='failed',error_detail=$1,finished_at=NOW()
-                   WHERE id=$2""", f"{type(exc).__name__}: {str(exc)[:300]}", job["id"])
-
-async def scheduledlinks(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not is_admin(update, context): return
-    rows = await context.application.bot_data["db"].require().fetch(
-        """SELECT id,channel_id,scheduled_at,status,error_detail FROM link_scheduled_jobs
-           WHERE clone_id=$1 ORDER BY id DESC LIMIT 30""",
-        context.application.bot_data["clone_id"])
-    body = "**sᴄʜᴇᴅᴜʟᴇᴅ ɪɴᴠɪᴛᴀᴛɪᴏɴs**\n\n" + (
-        "\n".join(f"#{row['id']} · {row['channel_id']} · {row['scheduled_at']} · {row['status']}" for row in rows)
-        if rows else "No scheduled invitations.")
-    await reply(update, context, body)
-
-
-async def cancelschedule(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not is_admin(update, context): return
-    if len(context.args) != 1 or not context.args[0].isdigit():
-        body = "Usage: /cancelschedule JOB_ID"
-    else:
-        result = await context.application.bot_data["db"].require().execute(
-            """UPDATE link_scheduled_jobs SET status='cancelled',finished_at=NOW()
-               WHERE clone_id=$1 AND id=$2 AND status='pending'""",
-            context.application.bot_data["clone_id"], int(context.args[0]))
-        body = "Scheduled invitation cancelled." if result.endswith("1") else "Pending job not found; it may already be processing or finished."
-    await reply(update, context, body)
-
-
-async def checkduplicate(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not is_admin(update, context): return
-    if not context.args:
-        body = "Usage: /checkduplicate HTTPS_URL"
-    else:
-        url = context.args[0].strip()
-        row = await context.application.bot_data["db"].require().fetchrow(
-            """SELECT 'public_entry' AS source,id,title FROM link_public_entries
-               WHERE clone_id=$1 AND target_url=$2
-               UNION ALL
-               SELECT 'shortener_history' AS source,id,original_url AS title FROM link_shortener_events
-               WHERE clone_id=$1 AND original_url=$2 LIMIT 1""",
-            context.application.bot_data["clone_id"], url)
-        body = f"Duplicate found in {row['source']} · Record #{row['id']} · {row['title']}" if row else "No exact duplicate URL found."
-    await reply(update, context, body)
-
-
-async def editlink(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not is_admin(update, context): return
-    if len(context.args) < 2 or not context.args[0].isdigit():
-        body = "Usage: /editlink ENTRY_ID NEW_URL [LABEL]"
-    else:
-        entry_id = int(context.args[0])
-        url = context.args[1].strip()
-        parsed = urlparse(url)
-        if parsed.scheme not in {"http", "https"} or not parsed.netloc or parsed.username or parsed.password:
-            body = "Provide a valid HTTP(S) destination URL."
-        else:
-            title = " ".join(context.args[2:]).strip() or None
-            result = await context.application.bot_data["db"].require().execute(
-                """UPDATE link_public_entries SET target_url=$1,title=COALESCE($2,title)
-                   WHERE clone_id=$3 AND id=$4 AND kind='external' AND is_active=TRUE""",
-                url, title, context.application.bot_data["clone_id"], entry_id)
-            body = "Permanent destination updated. Its public bot link remains unchanged." if result.endswith("1") else "Active external entry not found."
-    await reply(update, context, body)
-
-
-async def apiusage(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await shortnerstats(update, context)
-
-
-async def requeststats(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not is_admin(update, context): return
-    rows = await context.application.bot_data["db"].require().fetch(
-        """SELECT status,COUNT(*) AS total FROM link_pending_join_requests
-           WHERE clone_id=$1 GROUP BY status ORDER BY status""", context.application.bot_data["clone_id"])
-    body = "**ᴊᴏɪɴ ʀᴇǫᴜᴇsᴛ ᴀɴᴀʟʏᴛɪᴄs**\n\n" + (
-        "\n".join(f"{row['status']}: {row['total']}" for row in rows) if rows else "No request history.")
-    await reply(update, context, body)
-
-
-async def requesthistory(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not is_admin(update, context): return
-    rows = await context.application.bot_data["db"].require().fetch(
-        """SELECT channel_id,user_id,status,requested_at,updated_at FROM link_pending_join_requests
-           WHERE clone_id=$1 ORDER BY requested_at DESC LIMIT 30""", context.application.bot_data["clone_id"])
-    body = "**ᴊᴏɪɴ ʀᴇǫᴜᴇsᴛ ʜɪsᴛᴏʀʏ**\n\n" + (
-        "\n".join(f"{r['status']} · channel {r['channel_id']} · user {r['user_id']} · {r['requested_at']}" for r in rows)
-        if rows else "No request history.")
-    await reply(update, context, body)
-
-
-async def linkstats(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not is_admin(update, context): return
-    row = await context.application.bot_data["db"].require().fetchrow(
-        """SELECT (SELECT COUNT(*) FROM link_public_entries WHERE clone_id=$1 AND is_active=TRUE) AS public_entries,
-           (SELECT COUNT(*) FROM link_invites WHERE clone_id=$1) AS invites,
-           (SELECT COUNT(*) FROM link_invites WHERE clone_id=$1 AND revoked=FALSE AND expire_at>NOW()) AS unexpired_invites,
-           (SELECT COUNT(*) FROM link_channels WHERE clone_id=$1) AS channels""",
-        context.application.bot_data["clone_id"])
-    await reply(update, context,
-        f"**ʟɪɴᴋ ᴅᴀsʜʙᴏᴀʀᴅ**\nChannels: {row['channels']}\nPublic entries: {row['public_entries']}\nTotal invites: {row['invites']}\nCurrently unexpired invites: {row['unexpired_invites']}")
-
-
-async def users(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not is_admin(update, context): return
-    db = context.application.bot_data["db"].require()
-    clone_id = context.application.bot_data["clone_id"]
-    total = await db.fetchval("SELECT COUNT(*) FROM bot_users WHERE clone_id=$1", clone_id)
-    rows = await db.fetch("SELECT user_id,is_banned,last_seen FROM bot_users WHERE clone_id=$1 ORDER BY last_seen DESC LIMIT 25", clone_id)
-    body = f"**ᴜsᴇʀ ᴅᴀsʜʙᴏᴀʀᴅ** · Total: {total}\n\n" + (
-        "\n".join(f"{r['user_id']} · {'blocked' if r['is_banned'] else 'active'} · {r['last_seen']}" for r in rows)
-        if rows else "No registered users.")
-    await reply(update, context, body)
-
-
-async def userinfo(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not is_admin(update, context): return
-    if len(context.args) != 1 or not context.args[0].isdigit():
-        body = "Usage: /userinfo USER_ID"
-    else:
-        row = await context.application.bot_data["db"].require().fetchrow(
-            "SELECT user_id,first_seen,last_seen,is_banned FROM bot_users WHERE clone_id=$1 AND user_id=$2",
-            context.application.bot_data["clone_id"], int(context.args[0]))
-        body = f"User: {row['user_id']}\nFirst seen: {row['first_seen']}\nLast seen: {row['last_seen']}\nBlocked: {row['is_banned']}" if row else "User not found."
-    await reply(update, context, body)
-
-
-async def blockuser(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not is_admin(update, context): return
-    if len(context.args) != 1 or not context.args[0].isdigit():
-        body = "Usage: /blockuser USER_ID"
-    else:
-        result = await context.application.bot_data["db"].require().execute(
-            "UPDATE bot_users SET is_banned=TRUE WHERE clone_id=$1 AND user_id=$2",
-            context.application.bot_data["clone_id"], int(context.args[0]))
-        body = "User blocked." if result.endswith("1") else "User not found."
-    await reply(update, context, body)
-
-
-async def unblockuser(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not is_admin(update, context): return
-    if len(context.args) != 1 or not context.args[0].isdigit():
-        body = "Usage: /unblockuser USER_ID"
-    else:
-        result = await context.application.bot_data["db"].require().execute(
-            "UPDATE bot_users SET is_banned=FALSE WHERE clone_id=$1 AND user_id=$2",
-            context.application.bot_data["clone_id"], int(context.args[0]))
-        body = "User unblocked." if result.endswith("1") else "User not found."
-    await reply(update, context, body)
-
-
-async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not is_admin(update, context): return
-    row = await context.application.bot_data["db"].require().fetchrow(
-        """SELECT (SELECT COUNT(*) FROM bot_users WHERE clone_id=$1) AS users,
-           (SELECT COUNT(*) FROM link_channels WHERE clone_id=$1) AS channels,
-           (SELECT COUNT(*) FROM link_public_entries WHERE clone_id=$1 AND is_active=TRUE) AS public_links,
-           (SELECT COUNT(*) FROM link_join_events WHERE clone_id=$1) AS join_events""",
-        context.application.bot_data["clone_id"])
-    await reply(update, context,
-        f"**sʏsᴛᴇᴍ sᴛᴀᴛs**\nUsers: {row['users']}\nChannels: {row['channels']}\nPublic links: {row['public_links']}\nJoin events: {row['join_events']}")
-
-
-async def logs(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not is_admin(update, context): return
-    rows = await context.application.bot_data["db"].require().fetch(
-        """SELECT channel_id,user_id,event_status,created_at FROM link_join_events
-           WHERE clone_id=$1 ORDER BY id DESC LIMIT 25""", context.application.bot_data["clone_id"])
-    body = "**ʀᴇᴄᴇɴᴛ ᴊᴏɪɴ ʟᴏɢs**\n\n" + (
-        "\n".join(f"{r['event_status']} · channel {r['channel_id']} · user {r['user_id']} · {r['created_at']}" for r in rows)
-        if rows else "No join events.")
-    await reply(update, context, body)
-
-
-async def security(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not is_admin(update, context): return
-    hosts = sorted(host.strip() for host in os.getenv("SHORTENER_ALLOWED_HOSTS", "").split(",") if host.strip())
-    encrypted_key = bool(os.getenv("SHORTENER_ENCRYPTION_KEY", "").strip())
-    fsub_count = await context.application.bot_data["db"].require().fetchval(
-        "SELECT COUNT(*) FROM link_fsub_channels WHERE clone_id=$1", context.application.bot_data["clone_id"])
-    await reply(update, context,
-        f"**sᴇᴄᴜʀɪᴛʏ ᴄʜᴇᴄᴋ**\nShortener encryption key configured: {encrypted_key}\nAllowed shortener hosts: {', '.join(hosts) if hosts else 'none'}\nFSub channels: {fsub_count}")
-
-
-async def database_status(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not is_admin(update, context): return
-    try:
-        value = await context.application.bot_data["db"].require().fetchval("SELECT 1")
-        body = "PostgreSQL connection: healthy." if value == 1 else "PostgreSQL returned an unexpected response."
-    except Exception as exc:
-        body = f"Database check failed: {type(exc).__name__}."
-    await reply(update, context, body)
-
-
-async def diagnostics(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not is_admin(update, context): return
-    try:
-        me = await context.bot.get_me()
-        db = await context.application.bot_data["db"].require().fetchval("SELECT 1")
-        queue = "available" if context.job_queue else "unavailable"
-        body = f"Bot: @{me.username}\nTelegram API: reachable\nPostgreSQL: {'healthy' if db == 1 else 'unknown'}\nJobQueue: {queue}"
-    except Exception as exc:
-        body = f"Diagnostics failed: {type(exc).__name__}: {str(exc)[:120]}"
-    await reply(update, context, body)
 
 
 async def channelpanel(update: Update, context: ContextTypes.DEFAULT_TYPE):
