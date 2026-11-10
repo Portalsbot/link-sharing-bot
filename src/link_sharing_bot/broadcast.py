@@ -84,16 +84,12 @@ async def _deliver_one(context, chat_id, payload):
     if payload["kind"] == "text":
         await _send(context, chat_id, payload["text"], markup)
         return
-    await _send(context, chat_id, "ᴍᴇᴅɪᴀ ʙʀᴏᴀᴅᴄᴀsᴛ")
+    await _send(context, chat_id, payload.get("caption") or "ᴍᴇᴅɪᴀ ʙʀᴏᴀᴅᴄᴀsᴛ")
     media_type = payload["media_type"]
     method, argument = MEDIA_METHODS[media_type]
     buttons = list(markup.inline_keyboard) if markup else []
     buttons.append([InlineKeyboardButton("· ᴄʟᴏsᴇ ·", callback_data="branding:close")])
     args = {"chat_id": chat_id, argument: payload["file_id"], "reply_markup": InlineKeyboardMarkup(buttons)}
-    caption = payload.get("caption", "")
-    if caption:
-        args["caption"] = render_text(caption, data.get("small_caps", True))
-        args["parse_mode"] = "HTML"
     await getattr(context.bot, method)(**args)
 
 
