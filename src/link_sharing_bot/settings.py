@@ -131,6 +131,8 @@ async def configure_command_menu(app):
     admin_commands = [
         BotCommand("addch", "Register a target channel"),
         BotCommand("newlink", "Create a permanent external bot link"),
+        BotCommand("editlink", "Edit a saved external destination"),
+        BotCommand("checkduplicate", "Check an exact URL duplicate"),
         BotCommand("publiclinks", "List public bot links"),
         BotCommand("deletelink", "Disable a public bot link"),
         BotCommand("setttl", "Set expiry for future channel invites"),
@@ -149,6 +151,9 @@ async def configure_command_menu(app):
         BotCommand("fsub", "List force-subscription channels"),
         BotCommand("shorten", "Shorten a URL"),
         BotCommand("set_api", "Configure shortener API"),
+        BotCommand("setshortener", "Configure shortener API"),
+        BotCommand("shortenerhealth", "Check shortener security configuration"),
+        BotCommand("shortenerstats", "View shortener usage"),
         BotCommand("shortnerstatus", "Check shortener configuration"),
         BotCommand("shortnerstats", "View shortener usage"),
         BotCommand("linkhistory", "View shortener history"),
