@@ -1,6 +1,9 @@
 """Shared settings screens with functional About, Help, Channel and Back navigation."""
+import logging
 from telegram import Update, BotCommand, BotCommandScopeChat, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes, CommandHandler, CallbackQueryHandler
+
+log = logging.getLogger(__name__)
 from .branding import send_branded, keyboard_from_buttons
 
 
@@ -192,5 +195,8 @@ async def configure_command_menu(app):
     await app.bot.set_my_commands(public_commands)
     scope_ids = {app.bot_data["owner_id"], *app.bot_data.get("admins", set())}
     for user_id in scope_ids:
-        await app.bot.set_my_commands(public_commands + admin_commands,
-            scope=BotCommandScopeChat(chat_id=user_id))
+        try:
+            await app.bot.set_my_commands(public_commands + admin_commands,
+                scope=BotCommandScopeChat(chat_id=user_id))
+        except Exception as exc:
+            log.warning("Could not set admin command menu for user %s: %s", user_id, type(exc).__name__)
