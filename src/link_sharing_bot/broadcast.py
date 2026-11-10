@@ -212,8 +212,8 @@ async def broadcasts(update: Update, context: ContextTypes.DEFAULT_TYPE):
     rows = await context.application.bot_data["db"].require().fetch(
         """SELECT id,status,scheduled_at,sent_count,failed_count FROM bot_broadcasts
            WHERE clone_id=$1 ORDER BY id DESC LIMIT 30""", context.application.bot_data["clone_id"])
-    body = "**ʙʀᴏᴀᴅᴄᴀsᴛ ʜɪsᴛᴏʀʏ**\\n\\n" + (
-        "\\n".join(f"#{r['id']} · {r['status']} · {r['scheduled_at'] or 'immediate'} · sent {r['sent_count']} · failed {r['failed_count']}" for r in rows)
+    body = "**ʙʀᴏᴀᴅᴄᴀsᴛ ʜɪsᴛᴏʀʏ**\n\n" + (
+        "\n".join(f"#{r['id']} · {r['status']} · {r['scheduled_at'] or 'immediate'} · sent {r['sent_count']} · failed {r['failed_count']}" for r in rows)
         if rows else "No broadcasts.")
     await _send(context, update.effective_chat.id, body)
 
