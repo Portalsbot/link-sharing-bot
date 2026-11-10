@@ -1,6 +1,6 @@
 # Branding and Message Rules
 
-- Default image: `https://raw.githubusercontent.com/Portalsbot/image/main/photo_2026-11-01_20-42-48.jpg`
+- Default image: `https://i.ibb.co/PGpMYwYY/Gemini-Generated-Image-a7tjlia7tjlia7tj.png`
 - Original image page: `https://github.com/Portalsbot/image/blob/main/photo_2026-11-01_20-42-48.jpg`
 - All bot-authored text messages must use `send_branded(...)` in `branding.py`.
 - `send_branded` sends an image with a caption, HTML formatting, and optional inline keyboard.
@@ -10,4 +10,4 @@
 - The custom formatting parser supports B, I, U, S, CODE, PRE, Q, SPOILER and HTTP(S) LINK blocks.
 - Small-caps conversion is applied to ordinary readable text, not URLs/attributes or code blocks.
 
-If Telegram rejects the remote image URL, set `BRANDING_IMAGE_PATH` to a local JPEG mounted into the container, or use a bot-specific Telegram `file_id` implementation. A GitHub blob webpage is not a direct photo URL.
+The i.ibb.co URL above is the repository default. An explicitly configured `BRANDING_IMAGE_PATH` may override it with an intentional local image. A deployment-level `BRANDING_IMAGE_URL` value overrides the repository default.

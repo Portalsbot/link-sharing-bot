@@ -4,7 +4,7 @@ This ZIP is the independently deployable foundation for the Link Sharing Bot mas
 
 ## Branding image
 
-All bot-authored text replies are sent as branded photo captions using `https://raw.githubusercontent.com/Portalsbot/image/main/photo_2026-11-01_20-42-48.jpg`. Original user link: `https://github.com/Portalsbot/image/blob/main/photo_2026-11-01_20-42-48.jpg`. The image binary is not included because external binary downloads are unavailable in this build environment. Verify public accessibility and Telegram fetch. Optionally set `BRANDING_IMAGE_PATH` to a local image.
+All bot-authored text replies are sent as branded photo captions using `https://i.ibb.co/PGpMYwYY/Gemini-Generated-Image-a7tjlia7tjlia7tj.png`. Original user link: `https://github.com/Portalsbot/image/blob/main/photo_2026-11-01_20-42-48.jpg`. The configured `BRANDING_IMAGE_URL` is used by default. Set `BRANDING_IMAGE_PATH` only when you intentionally want to use a local image instead.
 
 Telegram caption limit is 1024 characters after parsing; long texts are split into branded photo captions. This bot primarily sends invitation links as photo captions with URLs and buttons, so the branding image accompanies those responses.
 

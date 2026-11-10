@@ -1,21 +1,13 @@
 {
   "schema_version": 1,
   "branding": {
-    "image_url": "https://raw.githubusercontent.com/Portalsbot/image/main/photo_2026-11-01_20-42-48.jpg",
+    "image_url": "https://i.ibb.co/PGpMYwYY/Gemini-Generated-Image-a7tjlia7tjlia7tj.png",
     "small_caps": true,
-    "dummy_button": {
-      "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
-      "url": "https://t.me/"
-    },
     "footer_text": ""
   },
   "commands": {
     "/start": {
       "text": "ᴡᴇʟᴄᴏᴍᴇ ᴛᴏ ʟɪɴᴋ sʜᴀʀɪɴɢ ʙᴏᴛ.",
-      "button": {
-        "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
-        "url": "https://t.me/"
-      },
       "fixed_buttons": {
         "close": {
           "text": "ᴄʟᴏsᴇ",
@@ -27,10 +19,6 @@
     },
     "/help": {
       "text": "ʟɪɴᴋ sʜᴀʀɪɴɢ ᴄᴏᴍᴍᴀɴᴅ ɢᴜɪᴅᴇ.",
-      "button": {
-        "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
-        "url": "https://t.me/"
-      },
       "fixed_buttons": {
         "close": {
           "text": "ᴄʟᴏsᴇ",
@@ -42,10 +30,6 @@
     },
     "/about": {
       "text": "ᴀʙᴏᴜᴛ ᴛʜɪs ʟɪɴᴋ sʜᴀʀɪɴɢ ʙᴏᴛ.",
-      "button": {
-        "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
-        "url": "https://t.me/"
-      },
       "fixed_buttons": {
         "close": {
           "text": "ᴄʟᴏsᴇ",
@@ -57,10 +41,6 @@
     },
     "/ping": {
       "text": "ʙᴏᴛ ʀᴇsᴘᴏɴsᴇ ᴀɴᴅ ʜᴇᴀʟᴛʜ ᴄʜᴇᴄᴋ.",
-      "button": {
-        "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
-        "url": "https://t.me/"
-      },
       "fixed_buttons": {
         "close": {
           "text": "ᴄʟᴏsᴇ",
@@ -72,10 +52,6 @@
     },
     "/settings": {
       "text": "ʟɪɴᴋ ʙᴏᴛ sᴇᴛᴛɪɴɢs ɢᴜɪᴅᴇ.",
-      "button": {
-        "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
-        "url": "https://t.me/"
-      },
       "fixed_buttons": {
         "close": {
           "text": "ᴄʟᴏsᴇ",
@@ -87,10 +63,6 @@
     },
     "/addch": {
       "text": "ᴄʜᴀɴɴᴇʟ ʀᴇɢɪsᴛʀᴀᴛɪᴏɴ ʀᴇsᴜʟᴛ.",
-      "button": {
-        "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
-        "url": "https://t.me/"
-      },
       "fixed_buttons": {
         "close": {
           "text": "ᴄʟᴏsᴇ",
@@ -102,10 +74,6 @@
     },
     "/addchat": {
       "text": "ᴀʟɪᴀs ғᴏʀ ᴄʜᴀɴɴᴇʟ ʀᴇɢɪsᴛʀᴀᴛɪᴏɴ.",
-      "button": {
-        "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
-        "url": "https://t.me/"
-      },
       "fixed_buttons": {
         "close": {
           "text": "ᴄʟᴏsᴇ",
@@ -117,10 +85,6 @@
     },
     "/delch": {
       "text": "ᴄʜᴀɴɴᴇʟ ʀᴇᴍᴏᴠᴀʟ ʀᴇsᴜʟᴛ.",
-      "button": {
-        "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
-        "url": "https://t.me/"
-      },
       "fixed_buttons": {
         "close": {
           "text": "ᴄʟᴏsᴇ",
@@ -132,10 +96,6 @@
     },
     "/delchat": {
       "text": "ᴀʟɪᴀs ғᴏʀ ᴄʜᴀɴɴᴇʟ ʀᴇᴍᴏᴠᴀʟ.",
-      "button": {
-        "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
-        "url": "https://t.me/"
-      },
       "fixed_buttons": {
         "close": {
           "text": "ᴄʟᴏsᴇ",
@@ -147,10 +107,6 @@
     },
     "/channels": {
       "text": "ʀᴇɢɪsᴛᴇʀᴇᴅ ᴄʜᴀɴɴᴇʟ ʟɪsᴛ.",
-      "button": {
-        "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
-        "url": "https://t.me/"
-      },
       "fixed_buttons": {
         "close": {
           "text": "ᴄʟᴏsᴇ",
@@ -162,10 +118,6 @@
     },
     "/channelpanel": {
       "text": "ᴄʜᴀɴɴᴇʟ ᴅᴀsʜʙᴏᴀʀᴅ.",
-      "button": {
-        "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
-        "url": "https://t.me/"
-      },
       "fixed_buttons": {
         "close": {
           "text": "ᴄʟᴏsᴇ",
@@ -177,10 +129,6 @@
     },
     "/genlink": {
       "text": "ɪɴᴠɪᴛᴇ ʟɪɴᴋ ɢᴇɴᴇʀᴀᴛɪᴏɴ ʀᴇsᴜʟᴛ.",
-      "button": {
-        "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
-        "url": "https://t.me/"
-      },
       "fixed_buttons": {
         "close": {
           "text": "ᴄʟᴏsᴇ",
@@ -192,10 +140,6 @@
     },
     "/bulklink": {
       "text": "ʙᴜʟᴋ ɪɴᴠɪᴛᴇ ʟɪɴᴋ ɢᴇɴᴇʀᴀᴛɪᴏɴ ʀᴇsᴜʟᴛ.",
-      "button": {
-        "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
-        "url": "https://t.me/"
-      },
       "fixed_buttons": {
         "close": {
           "text": "ᴄʟᴏsᴇ",
@@ -207,10 +151,6 @@
     },
     "/links": {
       "text": "ʀᴇᴄᴇɴᴛ ɪɴᴠɪᴛᴇ ʟɪɴᴋs ᴀɴᴅ sᴛᴀᴛᴜs.",
-      "button": {
-        "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
-        "url": "https://t.me/"
-      },
       "fixed_buttons": {
         "close": {
           "text": "ᴄʟᴏsᴇ",
@@ -222,10 +162,6 @@
     },
     "/revoke_links": {
       "text": "ɪɴᴠɪᴛᴇ ʟɪɴᴋ ʀᴇᴠᴏᴄᴀᴛɪᴏɴ ʀᴇsᴜʟᴛ.",
-      "button": {
-        "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
-        "url": "https://t.me/"
-      },
       "fixed_buttons": {
         "close": {
           "text": "ᴄʟᴏsᴇ",
@@ -237,10 +173,6 @@
     },
     "/bulkexpire": {
       "text": "ʙᴜʟᴋ ᴇxᴘɪʀʏ ᴘᴏʟɪᴄʏ ʀᴇsᴜʟᴛ.",
-      "button": {
-        "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
-        "url": "https://t.me/"
-      },
       "fixed_buttons": {
         "close": {
           "text": "ᴄʟᴏsᴇ",
@@ -252,10 +184,6 @@
     },
     "/setapproval": {
       "text": "ᴄʜᴀɴɴᴇʟ ᴀᴘᴘʀᴏᴠᴀʟ ᴘᴏʟɪᴄʏ ʀᴇsᴜʟᴛ.",
-      "button": {
-        "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
-        "url": "https://t.me/"
-      },
       "fixed_buttons": {
         "close": {
           "text": "ᴄʟᴏsᴇ",
@@ -267,10 +195,6 @@
     },
     "/reqmode": {
       "text": "ᴊᴏɪɴ ʀᴇǫᴜᴇsᴛ ᴍᴏᴅᴇ ᴜᴘᴅᴀᴛᴇ.",
-      "button": {
-        "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
-        "url": "https://t.me/"
-      },
       "fixed_buttons": {
         "close": {
           "text": "ᴄʟᴏsᴇ",
@@ -282,10 +206,6 @@
     },
     "/reqtime": {
       "text": "ᴊᴏɪɴ ʀᴇǫᴜᴇsᴛ ᴛɪᴍɪɴɢ ᴜᴘᴅᴀᴛᴇ.",
-      "button": {
-        "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
-        "url": "https://t.me/"
-      },
       "fixed_buttons": {
         "close": {
           "text": "ᴄʟᴏsᴇ",
@@ -297,10 +217,6 @@
     },
     "/add_fsub": {
       "text": "ғᴏʀᴄᴇ sᴜʙsᴄʀɪᴘᴛɪᴏɴ ᴄʜᴀɴɴᴇʟ ᴀᴅᴅ ʀᴇsᴜʟᴛ.",
-      "button": {
-        "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
-        "url": "https://t.me/"
-      },
       "fixed_buttons": {
         "close": {
           "text": "ᴄʟᴏsᴇ",
@@ -312,10 +228,6 @@
     },
     "/del_fsub": {
       "text": "ғᴏʀᴄᴇ sᴜʙsᴄʀɪᴘᴛɪᴏɴ ᴄʜᴀɴɴᴇʟ ʀᴇᴍᴏᴠᴀʟ.",
-      "button": {
-        "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
-        "url": "https://t.me/"
-      },
       "fixed_buttons": {
         "close": {
           "text": "ᴄʟᴏsᴇ",
@@ -327,10 +239,6 @@
     },
     "/fsub": {
       "text": "ғᴏʀᴄᴇ sᴜʙsᴄʀɪᴘᴛɪᴏɴ ᴄʜᴀɴɴᴇʟ ʟɪsᴛ.",
-      "button": {
-        "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
-        "url": "https://t.me/"
-      },
       "fixed_buttons": {
         "close": {
           "text": "ᴄʟᴏsᴇ",
@@ -342,10 +250,6 @@
     },
     "/shorten": {
       "text": "ᴜʀʟ sʜᴏʀᴛᴇɴɪɴɢ ʀᴇsᴜʟᴛ.",
-      "button": {
-        "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
-        "url": "https://t.me/"
-      },
       "fixed_buttons": {
         "close": {
           "text": "ᴄʟᴏsᴇ",
@@ -357,10 +261,6 @@
     },
     "/set_api": {
       "text": "sʜᴏʀᴛᴇɴᴇʀ ᴀᴘɪ ᴄᴏɴғɪɢᴜʀᴀᴛɪᴏɴ ʀᴇsᴜʟᴛ.",
-      "button": {
-        "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
-        "url": "https://t.me/"
-      },
       "fixed_buttons": {
         "close": {
           "text": "ᴄʟᴏsᴇ",
@@ -372,10 +272,6 @@
     },
     "/shortnerstatus": {
       "text": "sʜᴏʀᴛᴇɴᴇʀ sᴛᴀᴛᴜs.",
-      "button": {
-        "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
-        "url": "https://t.me/"
-      },
       "fixed_buttons": {
         "close": {
           "text": "ᴄʟᴏsᴇ",
@@ -387,10 +283,6 @@
     },
     "/shortnerstats": {
       "text": "sʜᴏʀᴛᴇɴᴇʀ ᴜsᴀɢᴇ sᴛᴀᴛɪsᴛɪᴄs.",
-      "button": {
-        "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
-        "url": "https://t.me/"
-      },
       "fixed_buttons": {
         "close": {
           "text": "ᴄʟᴏsᴇ",
@@ -402,10 +294,6 @@
     },
     "/linkhistory": {
       "text": "sʜᴏʀᴛᴇɴᴇʀ ʟɪɴᴋ ʜɪsᴛᴏʀʏ.",
-      "button": {
-        "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
-        "url": "https://t.me/"
-      },
       "fixed_buttons": {
         "close": {
           "text": "ᴄʟᴏsᴇ",
@@ -417,10 +305,6 @@
     },
     "/channelstats": {
       "text": "ᴄʜᴀɴɴᴇʟ ᴊᴏɪɴ ᴀɴᴀʟʏᴛɪᴄs.",
-      "button": {
-        "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
-        "url": "https://t.me/"
-      },
       "fixed_buttons": {
         "close": {
           "text": "ᴄʟᴏsᴇ",
@@ -432,10 +316,6 @@
     },
     "/schedulelink": {
       "text": "sᴄʜᴇᴅᴜʟᴇᴅ ɪɴᴠɪᴛᴇ ʟɪɴᴋ ʀᴇsᴜʟᴛ.",
-      "button": {
-        "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
-        "url": "https://t.me/"
-      },
       "fixed_buttons": {
         "close": {
           "text": "ᴄʟᴏsᴇ",
@@ -447,10 +327,6 @@
     },
     "/texts": {
       "text": "ᴇᴅɪᴛᴀʙʟᴇ ᴍᴇssᴀɢᴇ ᴛᴇᴍᴘʟᴀᴛᴇ ʟɪsᴛ.",
-      "button": {
-        "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
-        "url": "https://t.me/"
-      },
       "fixed_buttons": {
         "close": {
           "text": "ᴄʟᴏsᴇ",
@@ -462,10 +338,6 @@
     },
     "/edittext": {
       "text": "ᴍᴇssᴀɢᴇ ᴛᴇᴍᴘʟᴀᴛᴇ ᴇᴅɪᴛᴏʀ.",
-      "button": {
-        "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
-        "url": "https://t.me/"
-      },
       "fixed_buttons": {
         "close": {
           "text": "ᴄʟᴏsᴇ",
@@ -477,10 +349,6 @@
     },
     "/previewtext": {
       "text": "ᴍᴇssᴀɢᴇ ᴛᴇᴍᴘʟᴀᴛᴇ ᴘʀᴇᴠɪᴇᴡ.",
-      "button": {
-        "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
-        "url": "https://t.me/"
-      },
       "fixed_buttons": {
         "close": {
           "text": "ᴄʟᴏsᴇ",
@@ -492,10 +360,6 @@
     },
     "/resettext": {
       "text": "ᴍᴇssᴀɢᴇ ᴛᴇᴍᴘʟᴀᴛᴇ ʀᴇsᴇᴛ.",
-      "button": {
-        "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
-        "url": "https://t.me/"
-      },
       "fixed_buttons": {
         "close": {
           "text": "ᴄʟᴏsᴇ",
@@ -507,10 +371,6 @@
     },
     "/buttons": {
       "text": "ᴛᴇᴍᴘʟᴀᴛᴇ ʙᴜᴛᴛᴏɴ ʟɪsᴛ.",
-      "button": {
-        "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
-        "url": "https://t.me/"
-      },
       "fixed_buttons": {
         "close": {
           "text": "ᴄʟᴏsᴇ",
@@ -522,10 +382,6 @@
     },
     "/addbutton": {
       "text": "ᴛᴇᴍᴘʟᴀᴛᴇ ʙᴜᴛᴛᴏɴ ᴀᴅᴅ ʀᴇsᴜʟᴛ.",
-      "button": {
-        "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
-        "url": "https://t.me/"
-      },
       "fixed_buttons": {
         "close": {
           "text": "ᴄʟᴏsᴇ",
@@ -537,10 +393,6 @@
     },
     "/editbutton": {
       "text": "ᴛᴇᴍᴘʟᴀᴛᴇ ʙᴜᴛᴛᴏɴ ᴇᴅɪᴛ ʀᴇsᴜʟᴛ.",
-      "button": {
-        "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
-        "url": "https://t.me/"
-      },
       "fixed_buttons": {
         "close": {
           "text": "ᴄʟᴏsᴇ",
@@ -552,10 +404,6 @@
     },
     "/delbutton": {
       "text": "ᴛᴇᴍᴘʟᴀᴛᴇ ʙᴜᴛᴛᴏɴ ʀᴇᴍᴏᴠᴀʟ ʀᴇsᴜʟᴛ.",
-      "button": {
-        "text": "ᴅᴜᴍᴍʏ ʙᴜᴛᴛᴏɴ",
-        "url": "https://t.me/"
-      },
       "fixed_buttons": {
         "close": {
           "text": "ᴄʟᴏsᴇ",
