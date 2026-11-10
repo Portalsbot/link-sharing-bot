@@ -65,7 +65,7 @@ def _public_slug(channel_id: int) -> str:
     return f"ch{abs(int(channel_id))}"
 
 
-async async def _missing_fsub(context, user_id: int):
+async def _missing_fsub(context, user_id: int):
     rows = await context.application.bot_data["db"].require().fetch(
         "SELECT channel_id,mode FROM link_fsub_channels WHERE clone_id=$1 ORDER BY channel_id",
         context.application.bot_data["clone_id"],
