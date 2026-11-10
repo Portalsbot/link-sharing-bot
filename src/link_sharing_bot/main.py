@@ -21,6 +21,12 @@ async def post_init(app):
     for migration_file in migration_files:
         await db.init_schema(migration_file.read_text(encoding="utf-8"))
     app.bot_data["db"]=db
+    # Never replay a job whose external Telegram action may already have happened before a crash.
+    await db.require().execute(
+        """UPDATE link_scheduled_jobs SET status='failed',
+           error_detail=COALESCE(error_detail,'Worker restarted while job was processing; outcome requires review.'),
+           finished_at=NOW() WHERE clone_id=$1 AND status='processing'""",
+        s.clone_id)
     if app.job_queue is None:
         raise RuntimeError("PTB JobQueue is required for durable scheduled-link processing.")
     from .handlers.links import scheduled_link_worker
